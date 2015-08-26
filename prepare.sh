@@ -20,6 +20,7 @@ if [ $UID != 0 ]; then
 fi
 
 which ssh > /dev/null || $installer install -y ssh || exit 1
+# FIXME
 which sshd > /dev/null || $installer install -y openssh-server || exit 1
 which rsync > /dev/null || $installer install -y rsync || exit 1
 
