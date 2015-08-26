@@ -23,5 +23,5 @@ else
 	ssh-copy-id $host
 fi
 
-ssh $host echo "login $host successfully!" || echo "Fail to login $host!"
+ssh $host echo "login $host successfully!"
 echo
