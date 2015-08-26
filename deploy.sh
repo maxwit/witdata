@@ -30,10 +30,7 @@ sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/had
 bin/hadoop version || exit 1
 echo
 
-mkdir -p input
-cp etc/hadoop/*.xml input
-bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.1.jar grep input output 'dfs[a-z.]+'
-cat output/*
+mkdir -p tmp hdfs hdfs/data hdfs/name
 
 ### HDFS ###
 patch -p1 < $top/configuration.patch || exit 1
