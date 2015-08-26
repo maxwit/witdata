@@ -1,0 +1,28 @@
+diff --git a/etc/hadoop/mapred-site.xml b/etc/hadoop/mapred-site.xml
+index 761c352..deac43e 100644
+--- a/etc/hadoop/mapred-site.xml
++++ b/etc/hadoop/mapred-site.xml
+@@ -17,5 +17,8 @@
+ <!-- Put site-specific property overrides in this file. -->
+ 
+ <configuration>
+-
++    <property>
++        <name>mapreduce.framework.name</name>
++        <value>yarn</value>
++    </property>
+ </configuration>
+diff --git a/etc/hadoop/yarn-site.xml b/etc/hadoop/yarn-site.xml
+index 25292c7..10d1b33 100644
+--- a/etc/hadoop/yarn-site.xml
++++ b/etc/hadoop/yarn-site.xml
+@@ -15,5 +15,8 @@
+ <configuration>
+ 
+ <!-- Site specific YARN configuration properties -->
+-
++    <property>
++        <name>yarn.nodemanager.aux-services</name>
++        <value>mapreduce_shuffle</value>
++    </property>
+ </configuration>
