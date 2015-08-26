@@ -13,7 +13,25 @@ if [ -z "$JAVA_HOME" ]; then
 	exit 1
 fi
 
+if [ ! -e .slaves ]; then
+	echo -e ".slaves does not exist!\n"
+	exit 1
+fi
+
+slaves=(`cat .slaves`)
+if [ ${#slaves[@]} = 0 ]; then
+	echo -e "invalid .slaves!\n"
+	exit 1
+fi
+
 tarball=$1
+
+# FIXME
+master=(`ifconfig | grep -o "[1-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"`)
+master=${master[0]}
+echo "master = $master"
+echo "slaves = ${slaves[@]}"
+echo
 
 hadoop=`basename $1`
 hadoop=${hadoop%%.tar.*}
@@ -24,52 +42,32 @@ echo "extracting $hadoop ..."
 rm -rf $hadoop /tmp/hadoop-$USER
 tar xf $tarball || exit 1
 
+# TODO:
+# mkdir -p tmp hdfs hdfs/data hdfs/name
+
 cd $hadoop
 sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
 
 bin/hadoop version || exit 1
 echo
 
-mkdir -p tmp hdfs hdfs/data hdfs/name
+cp -v etc/hadoop/mapred-site.xml{.template,}
+patch -p1 < $top/configure-sites.patch || exit 1
+for xml in core-site hdfs-site mapred-site yarn-site
+do
+	sed -i "s/__MASTER__/$master/g" ${xml}.xml
+done
 
-### HDFS ###
-patch -p1 < $top/configuration.patch || exit 1
+for slave in ${slaves[@]}
+do
+	scp -r ../$hadoop ${slave}:
+done
 
 bin/hdfs namenode -format
 
-sbin/start-dfs.sh
+sbin/start-all.sh
 
-firefox http://localhost:50070
-
-bin/hdfs dfs -mkdir /user
-bin/hdfs dfs -mkdir /user/$USER
-
-bin/hdfs dfs -put etc/hadoop input
-
-bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.1.jar grep input output 'dfs[a-z.]+'
-
-bin/hdfs dfs -get output output
-cat output/*
-
-bin/hdfs dfs -cat output/*
-
-# sbin/stop-dfs.sh
-echo "***************************"
-echo "   run 'sbin/stop-dfs.sh'"
-echo "***************************"
-echo
-
-### YARN ###
-cp -v etc/hadoop/mapred-site.xml{.template,}
-patch -p1 < $top/mapred-and-yarn.patch || exit 1
-
-sbin/start-yarn.sh
-
-firefox http://localhost:8088
-# do somehting more here
-
-# sbin/stop-yarn.sh
-echo "***************************"
-echo "    run 'sbin/stop-yarn.sh'"
-echo "***************************"
+echo "********************************************"
+echo "    run 'sbin/stop-all.sh to stop hadoop!'"
+echo "********************************************"
 echo
