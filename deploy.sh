@@ -18,7 +18,7 @@ tarball=$1
 hadoop=`basename $1`
 hadoop=${hadoop%%.tar.*}
 
-cd /opt
+cd
 echo "extracting $hadoop ..."
 # FIXME
 rm -rf $hadoop /tmp/hadoop-$USER
