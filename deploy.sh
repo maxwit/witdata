@@ -55,7 +55,7 @@ cp -v etc/hadoop/mapred-site.xml{.template,}
 patch -p1 < $top/configure-sites.patch || exit 1
 for xml in core-site hdfs-site mapred-site yarn-site
 do
-	sed -i "s/__MASTER__/$master/g" ${xml}.xml
+	sed -i "s/__MASTER__/$master/g" etc/hadoop/${xml}.xml || exit 1
 done
 
 for slave in ${slaves[@]}
