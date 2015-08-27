@@ -29,3 +29,4 @@ export PATH=\$JAVA_HOME/bin:\$PATH
 EOF
 
 echo "JDK successfully installed to $JAVA_HOME"
+$JAVA_HOME/bin/javac -version
