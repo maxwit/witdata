@@ -28,7 +28,7 @@ export CLASS_PATH=.:\$JAVA_HOME/lib:\$JAVA_HOME/jre/lib
 export PATH=\$JAVA_HOME/bin:\$PATH
 EOF
 
-source ~/.bashrc
-javac -version || exit 1
+#source ~/.bashrc
+#javac -version || exit 1
 
-echo "JDK successfully installed to $JAVA_HOME"
+#echo "JDK successfully installed to $JAVA_HOME"
