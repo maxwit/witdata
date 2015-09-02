@@ -63,7 +63,7 @@ cp -v etc/hadoop/mapred-site.xml{.template,}
 patch -p1 < $top/configure-${mode}-sites.patch || exit 1
 
 if [ $mode = "cluster" ]; then
-	cp -v .slaves etc/hadoop/slaves	
+	cp -v $top/.slaves etc/hadoop/slaves
 
 	for xml in core-site hdfs-site mapred-site yarn-site
 	do
