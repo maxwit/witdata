@@ -4,7 +4,7 @@ function jdk_test()
 {
 	for host in $@
 	do
-		echo "validating JDK on $host ..."
+		echo "Validating JDK: $host ..."
 		scp target/check-jdk.sh $host:~/bin/
 		ssh $host ~/bin/check-jdk.sh
 	
@@ -14,9 +14,15 @@ function jdk_test()
 }
 
 opt_test=0
-if [ ! -z $WITPUB ]; then
-	opt_jdk=$WITPUB/devel/java/jdk/jdk-7u67-linux-x64.tar.gz
-fi
+
+for pub in $WITPUB /mnt/pub
+do
+	# FIXME
+	_jdk="$pub/devel/java/jdk/jdk-7u67-linux-x64.tar.gz"
+	if [ -e $_jdk ]; then
+		opt_jdk=$_jdk
+	fi
+done
 
 for opt in $@
 do
@@ -63,7 +69,7 @@ count=1
 
 for host in ${hosts[@]}
 do
-	echo "Installing JDK for $host [$count/$total] ..."
+	echo "Installing JDK [$count/$total]: $USER@$host ..."
 
 	ssh $host mkdir -vp bin
 	scp target/install-jdk.sh $host:~/bin/

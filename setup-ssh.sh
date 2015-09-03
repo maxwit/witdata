@@ -8,13 +8,13 @@ function ssh_test()
 	done
 }
 
-opt_test=false
+opt_test=0
 
 for opt in $@
 do
 	case $opt in
 	-t|--test)
-		opt_test=true
+		opt_test=1
 		;;
 	*)
 		echo -e "Invalid option '$opt'\n"
@@ -29,7 +29,7 @@ else
 	hosts=(localhost)
 fi
 
-if [ $opt_test ]; then
+if [ $opt_test -eq 1 ]; then
 	ssh_test ${hosts[@]}
 	echo
 	exit 0
@@ -50,9 +50,11 @@ count=1
 
 for host in ${hosts[@]}
 do
-	echo "copying $kf to $host [$count/$total]..."
+	echo "Copying $kf [$count/$total]: $USER@$host ..."
 	# TODO: no-interactive support
 	ssh-copy-id $host
+
+	((count++))
 	echo
 done
 

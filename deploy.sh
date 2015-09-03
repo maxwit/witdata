@@ -65,9 +65,9 @@ patch -p1 < $top/configure-${mode}-sites.patch || exit 1
 if [ $mode = "cluster" ]; then
 	cp -v $top/.slaves etc/hadoop/slaves
 
-	for xml in core-site hdfs-site mapred-site yarn-site
+	for cfg in core hdfs mapred yarn
 	do
-		sed -i "s/__MASTER__/$master/g" etc/hadoop/${xml}.xml || exit 1
+		sed -i "s/__MASTER__/$master/g" etc/hadoop/${cfg}-site.xml || exit 1
 	done
 
 	# TODO: tar and copy
