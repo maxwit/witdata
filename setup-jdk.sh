@@ -7,7 +7,7 @@ function jdk_test()
 		echo "Validating JDK: $host ..."
 		scp target/check-jdk.sh $host:~/bin/
 		ssh $host ~/bin/check-jdk.sh
-	
+
 		((count++))
 		echo
 	done
@@ -15,12 +15,32 @@ function jdk_test()
 
 opt_test=0
 
-for pub in $WITPUB /mnt/pub
+function get_version
+{
+	ver=(`basename ${versions[$1]} | awk -F'-' '{print $2}' | awk -F'u' '{print $1}'`)
+	echo $ver
+}
+
+for witpub in /mnt/witpub /mnt/hgfs/witpub
 do
-	# FIXME
-	_jdk="$pub/devel/java/jdk/jdk-7u67-linux-x64.tar.gz"
-	if [ -e $_jdk ]; then
-		opt_jdk=$_jdk
+	versions=(`ls $witpub/devel/java/jdk/jdk-*-linux-*.tar.* 2>/dev/null`)
+
+	s=${#versions[@]}
+	if [ $s -gt 0 ]; then
+		m=0
+		ver_m=`get_version 0`
+
+		for ((i=1; i<$s; i++))
+		do
+			ver_c=`get_version $i`
+
+			if [ $ver_c -gt $ver_m ]; then
+				m=$i
+			fi
+		done
+
+		opt_jdk=${versions[$m]}
+		break
 	fi
 done
 
