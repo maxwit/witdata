@@ -24,7 +24,15 @@ done
 
 if [ -e .slaves ]; then
 	slaves=`cat .slaves`
-	hosts=(localhost $slaves)
+
+	# FIXME
+	master=(`ifconfig | grep -o "[1-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"`)
+	master=${master[0]}
+
+	echo "master = $master"
+	echo "slaves = ${slaves[@]}"
+
+	hosts=($master $slaves)
 else
 	hosts=(localhost)
 fi
