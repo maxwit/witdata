@@ -39,7 +39,6 @@ if [ $mode = "cluster" ]; then
 	echo
 fi
 
-
 hadoop=`basename $tarball`
 hadoop=${hadoop%%.tar.*}
 
@@ -73,6 +72,7 @@ if [ $mode = "cluster" ]; then
 	# TODO: tar and copy
 	for slave in ${slaves[@]}
 	do
+		ssh ${slaves} rm -rf $hadoop
 		scp -r ../$hadoop ${slave}:
 	done
 fi
