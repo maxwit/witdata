@@ -22,6 +22,6 @@ do
 done
 echo
 
-#echo "removing $temp ..."
+echo "removing $temp ..."
 #ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
-#echo
+echo
