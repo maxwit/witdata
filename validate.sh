@@ -1,21 +1,27 @@
 #!/bin/sh
 
+echo 'validating HADOOP-XX ...'
+echo
+
 . ./parse-config.sh
+
+echo "user = $user"
+echo "master = $master"
+echo "slaves = ${slaves[@]}"
+echo
 
 temp=`ssh $user@$master mktemp`
 
-echo "putting $temp to $user@$master ..."
+echo "putting $temp to master ($user@$master) ..."
 ssh $user@$master hadoop-2.7.1/bin/hadoop fs -put $temp / || exit 1
 
 for slave in ${slaves[@]}
 do
 	echo "checking '$slave' ..."
 	ssh $user@$slave hadoop-2.7.1/bin/hadoop fs -ls /`basename $temp` || exit 1
-#	ret=$?
-#	if [ $ret -ne 0 ]; then
-#		echo "Failed."
-#		exit $ret
-#	else
-#		echo "OK."
-#	fi
 done
+echo
+
+#echo "removing $temp ..."
+#ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
+#echo
