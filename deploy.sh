@@ -46,7 +46,7 @@ echo
 
 ### configure sites ###
 cp -v etc/hadoop/mapred-site.xml{.template,}
-patch -p1 < $top/configure-${mode}-sites.patch || exit 1
+patch -p1 < $top/patch/configure-${mode}-sites.patch || exit 1
 
 if [ $mode = "cluster" ]; then
 	truncate --size 0 etc/hadoop/slaves
