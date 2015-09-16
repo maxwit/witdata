@@ -17,27 +17,23 @@ fi
 
 if [ -e .slaves ]; then
 	mode="cluster"
-else
-	mode="pseudo"
-fi
 
-echo -e "configure hadoop as $mode mode!\n"
+	master="master" # FIXME
 
-if [ $mode = "cluster" ]; then
-	slaves=(`cat .slaves`)
+	slaves=`cat .slaves`
 	if [ ${#slaves[@]} = 0 ]; then
 		echo -e "invalid .slaves: no slaves defined!\n"
 		exit 1
 	fi
 
-	# FIXME
-	master=(`ifconfig | grep -o "[1-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"`)
-	master=${master[0]}
-
-	echo "master = $master"
-	echo "slaves = ${slaves[@]}"
-	echo
+	hosts=($master $slaves)
+else
+	mode="pseudo"
+	hosts=(localhost)
 fi
+
+echo -e "configure hadoop as $mode mode!\n"
+echo "hosts = ${hosts[@]}"
 
 hadoop=`basename $tarball`
 hadoop=${hadoop%%.tar.*}

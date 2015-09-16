@@ -23,19 +23,15 @@ do
 done
 
 if [ -e .slaves ]; then
+	master="master" # FIXME
 	slaves=`cat .slaves`
-
-	# FIXME
-	master=(`ifconfig | grep -o "[1-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"`)
-	master=${master[0]}
-
-	echo "master = $master"
-	echo "slaves = ${slaves[@]}"
 
 	hosts=($master $slaves)
 else
 	hosts=(localhost)
 fi
+
+echo "hosts = ${hosts[@]}"
 
 if [ $opt_test -eq 1 ]; then
 	ssh_test ${hosts[@]}
