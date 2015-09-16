@@ -2,6 +2,8 @@
 
 . ./parse-config.sh
 
+user=hadoop
+
 temp=`ssh $master mktemp`
 ssh $user@$master hadoop-2.7.1/bin/hadoop fs -put $temp /
 
