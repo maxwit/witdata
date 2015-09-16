@@ -73,8 +73,11 @@ bin/hdfs namenode -format
 
 grep HADOOP_HOME ~/.profile || echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.profile
 
-sbin/start-dfs.sh
+sbin/start-dfs.sh || exit 1
 echo
 
-sbin/start-yarn.sh
+sbin/start-yarn.sh || exit 1
+echo
+
+echo 'Done!'
 echo
