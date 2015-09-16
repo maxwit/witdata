@@ -70,22 +70,10 @@ fi
 
 bin/hdfs namenode -format
 
-#echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.bashrc
-
-#sbin/start-all.sh
-#echo "********************************************"
-#echo "    run 'sbin/stop-all.sh to stop hadoop!'"
-#echo "********************************************"
-#echo
+#echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.profile
 
 sbin/start-dfs.sh
-echo "***************************"
-echo "   run 'sbin/stop-dfs.sh'"
-echo "***************************"
 echo
 
 sbin/start-yarn.sh
-echo "***************************"
-echo "   run 'sbin/stop-yarn.sh'"
-echo "***************************"
 echo
