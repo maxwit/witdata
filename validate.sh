@@ -3,7 +3,7 @@
 . ./parse-config.sh
 
 if [ -z "$user" ]; then
-	user=hadoop
+	user='hadoop'
 fi
 
 temp=`ssh $master mktemp`
