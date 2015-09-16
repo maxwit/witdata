@@ -8,7 +8,7 @@ index d2ddf89..1dfba21 100644
  <configuration>
 +	<property>
 +		<name>fs.defaultFS</name>
-+		<value>hdfs://master:9000</value>
++		<value>hdfs://__MASTER__:9000</value>
 +	</property>
  </configuration>
 diff --git a/etc/hadoop/hdfs-site.xml b/etc/hadoop/hdfs-site.xml
@@ -26,7 +26,7 @@ index 50ec146..17abf56 100644
 +	</property>
 +	<property>
 +		<name>dfs.namenode.secondary.http-address</name>
-+		<value>master:9001</value>
++		<value>__MASTER__:9001</value>
 +	</property>
  </configuration>
 diff --git a/etc/hadoop/mapred-site.xml b/etc/hadoop/mapred-site.xml
@@ -44,11 +44,11 @@ index 761c352..59640ba 100644
 +	</property>
 +	<property>
 +		<name>mapreduce.jobhistory.address</name>
-+		<value>master:10020</value>
++		<value>__MASTER__:10020</value>
 +	</property>
 +	<property>
 +		<name>mapreduce.jobhistory.webapp.address</name>
-+		<value>master:19888</value>
++		<value>__MASTER__:19888</value>
 +	</property>
  </configuration>
 diff --git a/etc/hadoop/yarn-site.xml b/etc/hadoop/yarn-site.xml
@@ -72,22 +72,22 @@ index 25292c7..e56e711 100644
 +	</property>
 +	<property>
 +		<name>yarn.resourcemanager.address</name>
-+		<value>master:8032</value>
++		<value>__MASTER__:8032</value>
 +	</property>
 +	<property>
 +		<name>yarn.resourcemanager.scheduler.address</name>
-+		<value>master:8030</value>
++		<value>__MASTER__:8030</value>
 +	</property>
 +	<property>
 +		<name>yarn.resourcemanager.resource-tracker.address</name>
-+		<value>master:8031</value>
++		<value>__MASTER__:8031</value>
 +	</property>
 +	<property>
 +		<name>yarn.resourcemanager.admin.address</name>
-+		<value>master:8033</value>
++		<value>__MASTER__:8033</value>
 +	</property>
 +	<property>
 +		<name>yarn.resourcemanager.webapp.address</name>
-+		<value>master:8088</value>
++		<value>__MASTER__:8088</value>
 +	</property>
  </configuration>

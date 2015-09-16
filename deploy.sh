@@ -64,7 +64,7 @@ if [ $mode = "cluster" ]; then
 	# TODO: tar and copy
 	for slave in ${slaves[@]}
 	do
-		ssh ${slaves} rm -rf $hadoop
+		ssh ${slave} rm -rf $hadoop
 		scp -r ../$hadoop ${slave}:
 	done
 fi
