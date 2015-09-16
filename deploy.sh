@@ -71,7 +71,7 @@ fi
 
 bin/hdfs namenode -format
 
-#echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.profile
+grep HADOOP_HOME ~/.profile || echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.profile
 
 sbin/start-dfs.sh
 echo
