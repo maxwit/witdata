@@ -15,21 +15,12 @@ if [ -z "$JAVA_HOME" ]; then
 	exit 1
 fi
 
-if [ -e .slaves ]; then
+. ./parse-config.sh
+
+if [ ${#slaves[@]} -ne 0 ]; then
 	mode="cluster"
-
-	master="master" # FIXME
-
-	slaves=`cat .slaves`
-	if [ ${#slaves[@]} = 0 ]; then
-		echo -e "invalid .slaves: no slaves defined!\n"
-		exit 1
-	fi
-
-	hosts=($master $slaves)
 else
 	mode="pseudo"
-	hosts=(localhost)
 fi
 
 echo -e "configure hadoop as $mode mode!\n"

@@ -22,14 +22,7 @@ do
 	esac
 done
 
-if [ -e .slaves ]; then
-	master="master" # FIXME
-	slaves=`cat .slaves`
-
-	hosts=($master $slaves)
-else
-	hosts=(localhost)
-fi
+. ./parse-config.sh
 
 echo "hosts = ${hosts[@]}"
 
