@@ -1,10 +1,8 @@
 #!/bin/sh
 
-echo 'validating HADOOP-XX ...'
-echo
-
 . ./parse-config.sh
 
+echo "validating '$HADOOP' ..."
 echo "user = $user"
 echo "master = $master"
 echo "slaves = ${slaves[@]}"
