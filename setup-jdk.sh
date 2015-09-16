@@ -1,5 +1,8 @@
 #!/bin/sh
 
+cd `dirname $0`
+top=$PWD
+
 function jdk_test()
 {
 	for host in $@

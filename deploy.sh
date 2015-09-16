@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/sh --login
 
+cd `dirname $0`
 top=$PWD
 
 if [ $# != 1 ]; then

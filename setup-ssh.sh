@@ -1,5 +1,8 @@
 #!/bin/sh
 
+cd `dirname $0`
+top=$PWD
+
 function ssh_test()
 {
 	for host in $@
