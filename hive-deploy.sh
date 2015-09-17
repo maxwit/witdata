@@ -18,12 +18,11 @@ repo='/mnt/witpub/devel/hadoop/'
 hive='apache-hive-1.2.1-bin'
 hive_tarball=$hive.tar.gz
 
-cd
 echo "extracting $hive ..."
-tar xf $repo/$hive_tarball || exit 1
+tar xf $repo/$hive_tarball -C $HOME || exit 1
 
 grep HIVE_HOME ~/.bashrc || cat >> ~/.bashrc <<EOF 
-export HIVE_HOME=$HOME/$hive
+export HIVE_HOME=\$HOME/$hive
 export PATH=\$PATH:\$HIVE_HOME/bin
 export HIVE_CONF_DIR=\$HIVE_HOME/conf
 EOF
