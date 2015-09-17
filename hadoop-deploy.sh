@@ -21,7 +21,7 @@ else
 fi
 
 echo -e "configure hadoop in $mode mode!\n"
-echo "All nodes: ${hosts[@]}"
+echo "Cluster nodes: ${hosts[@]}"
 
 repo='/mnt/witpub/devel/hadoop/'
 
@@ -74,7 +74,9 @@ echo
 
 # FIXME: right here?
 # mkdir -p tmp hdfs hdfs/data hdfs/name
-bin/hadoop fs -mkdir /tmp || exit 1
+bin/hadoop fs -ls /
+bin/hadoop fs -mkdir /tmp
+bin/hadoop fs -chmod g+w /tmp
 
 echo 'Done!'
 echo
