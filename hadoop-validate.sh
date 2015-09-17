@@ -17,13 +17,13 @@ temp=`mktemp`
 date > $temp
 
 echo "putting $temp to master ..."
-$HADOOP_HOME/bin/hadoop fs -put $temp / || exit 1
+$HADOOP_HOME/bin/hadoop fs -put $temp /tmp || exit 1
 echo
 
 for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
 do
 	echo "checking '$slave' ..."
-	ssh $slave $HADOOP_HOME/bin/hadoop fs -ls /`basename $temp` || exit 1
+	ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || exit 1
 done
 echo
 

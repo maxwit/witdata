@@ -35,9 +35,6 @@ sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/had
 bin/hadoop version || exit 1
 echo
 
-# TODO:
-# mkdir -p tmp hdfs hdfs/data hdfs/name
-
 ### configure sites ###
 cp -v etc/hadoop/mapred-site.xml{.template,}
 patch -p1 < $top/patch/configure-${mode}-sites.patch || exit 1
@@ -74,6 +71,10 @@ echo
 
 sbin/start-yarn.sh || exit 1
 echo
+
+# FIXME: right here?
+# mkdir -p tmp hdfs hdfs/data hdfs/name
+bin/hadoop fs -mkdir /tmp || exit 1
 
 echo 'Done!'
 echo
