@@ -44,7 +44,7 @@ echo
 
 # setup-ssh.sh
 # setup-jdk.sh
-for app in hadoop hive
+for app in hadoop
 do
 	echo "##################################"
 	echo "             $app"
