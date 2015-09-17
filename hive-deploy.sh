@@ -27,8 +27,8 @@ echo "extracting $hive ..."
 tar xf $repo || exit 1
 mv $old_name $new_hive
 
-grep HIVE_HOME ~/.bashrc || cat >> ~/.bashrc <<EOF 
-export HIVE_HOME=$HOME/hive-1.2.1
-export PATH=$PATH:$HIVE_HOME/bin
-export HIVE_CONF_DIR=$HIVE_HOME/conf
-EOF
+if [ "$HIVE_HOME" == "" ]; then
+	echo 'export HIVE_HOME=$HOME/hive-1.2.1' >> ~/.bashrc
+	echo 'export PATH=$PATH:$HIVE_HOME/bin' >> ~/.bashrc
+	echo 'export HIVE_CONF_DIR=$HIVE_HOME/conf' >> ~/.bashrc
+fi
