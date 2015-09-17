@@ -10,9 +10,6 @@ pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
 cat > .config << EOF
 master = node1.$pusher
 slaves = node2.$pusher node3.$pusher
-user = hadoop
 EOF
 
-./remote-deploy.sh || exit 1
-
-./validate.sh || exit 1
+./remote-deploy.sh -u hadoop -m node1.$pusher || exit 1
