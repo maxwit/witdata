@@ -7,9 +7,9 @@ function jdk_test()
 {
 	for host in $@
 	do
-		echo "Validating JDK: $user@$host ..."
-		scp target/check-jdk.sh $user@$host:~/bin/
-		ssh $user@$host ~/bin/check-jdk.sh || exit 1
+		echo "Validating JDK: $host ..."
+		scp target/check-jdk.sh $host:~/bin/
+		ssh $host ~/bin/check-jdk.sh || exit 1
 
 		((count++))
 		echo
@@ -24,28 +24,24 @@ function get_version
 	echo $ver
 }
 
-for witpub in /mnt/witpub /mnt/hgfs/witpub
-do
-	versions=(`ls $witpub/devel/java/jdk/jdk-*-linux-*.tar.* 2>/dev/null`)
+versions=(`ls /mnt/witpub/devel/java/jdk/jdk-*-linux-*.tar.* 2>/dev/null`)
 
-	s=${#versions[@]}
-	if [ $s -gt 0 ]; then
-		m=0
-		ver_m=`get_version 0`
+s=${#versions[@]}
+if [ $s -gt 0 ]; then
+	m=0
+	ver_m=`get_version 0`
 
-		for ((i=1; i<$s; i++))
-		do
-			ver_c=`get_version $i`
+	for ((i=1; i<$s; i++))
+	do
+		ver_c=`get_version $i`
 
-			if [ $ver_c -gt $ver_m ]; then
-				m=$i
-			fi
-		done
+		if [ $ver_c -gt $ver_m ]; then
+			m=$i
+		fi
+	done
 
-		opt_jdk=${versions[$m]}
-		break
-	fi
-done
+	opt_jdk=${versions[$m]}
+fi
 
 for opt in $@
 do
@@ -89,12 +85,12 @@ count=1
 
 for host in ${hosts[@]}
 do
-	echo "Installing JDK [$count/$total]: $user@$host ..."
+	echo "Installing JDK [$count/$total]: $host ..."
 
-	ssh $user@$host mkdir -vp bin
-	scp target/install-jdk.sh $user@$host:~/bin/
-	scp $opt_jdk $user@$host:
-	ssh $user@$host ~/bin/install-jdk.sh $jdk
+	ssh $host mkdir -vp bin
+	scp target/install-jdk.sh $host:~/bin/
+	# scp $opt_jdk $host:
+	ssh $host ~/bin/install-jdk.sh $jdk
 
 	((count++))
 	echo
