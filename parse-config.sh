@@ -23,5 +23,7 @@ fi
 hosts=($master $slaves)
 
 # FIXME
-hadoop='hadoop-2.7.1'
+repo='/mnt/witpub/devel/hadoop/'
 
+hadoop='hadoop-2.7.1'
+hive='apache-hive-1.2.1-bin'

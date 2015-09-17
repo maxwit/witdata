@@ -23,8 +23,6 @@ fi
 echo -e "configure hadoop in $mode mode!\n"
 echo "Cluster nodes: ${hosts[@]}"
 
-repo='/mnt/witpub/devel/hadoop/'
-
 echo "extracting $hadoop ..."
 tar xf $repo/${hadoop}.tar.gz -C $HOME || exit 1
 

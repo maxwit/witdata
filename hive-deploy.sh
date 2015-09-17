@@ -14,14 +14,15 @@ if [ -z "$JAVA_HOME" ]; then
 	exit 1
 fi
 
-repo='/mnt/witpub/devel/hadoop/'
-hive='apache-hive-1.2.1-bin'
-hive_tarball=$hive.tar.gz
+. ./parse-config.sh
 
 echo "extracting $hive ..."
-tar xf $repo/$hive_tarball -C $HOME || exit 1
+tar xf $repo/${hive}.tar.gz -C $HOME || exit 1
 
-grep HIVE_HOME ~/.bashrc || cat >> ~/.bashrc <<EOF 
+# FIXME
+sed -i '/HIVE_/d' ~/.bashrc
+
+cat >> ~/.bashrc << EOF
 export HIVE_HOME=\$HOME/$hive
 export PATH=\$PATH:\$HIVE_HOME/bin
 export HIVE_CONF_DIR=\$HIVE_HOME/conf
