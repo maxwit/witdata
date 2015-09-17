@@ -1,11 +1,18 @@
 #!/bin/sh
 
-cp .config $user@$master:config.txt
-ssh $user@$master hive <<EOF
+temp=`mktemp`
+
+echo > $temp << EOF
+master=node1.jerry
+slave1=node2.jerry
+slave2=node3.jerry
+EOF
+
+hive << EOF
 create table if not exists test (name string,value string)
 row format delimited
 fields terminated by '=';
-load data local inpath '/home/$user/config.txt'
+load data local inpath '$temp'
 overwrite into table test;
 select * from test;
 drop table test;
