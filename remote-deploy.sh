@@ -44,9 +44,16 @@ echo
 
 # setup-ssh.sh
 # setup-jdk.sh
-for seq in hadoop-destroy.sh hadoop-deploy.sh hadoop-validate.sh
+for app in hadoop hive
 do
-	echo "executing $seq ..."
-	ssh $user@$master $wd/$seq || exit 1
-	echo
+	echo "##################################"
+	echo "             $app"
+	echo "##################################"
+
+	for seq in $app-destroy.sh $app-deploy.sh $app-validate.sh
+	do
+		echo "executing $seq ..."
+		ssh $user@$master $wd/$seq || exit 1
+		echo
+	done
 done
