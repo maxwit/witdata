@@ -7,7 +7,7 @@ function ssh_test()
 {
 	for host in $@
 	do
-		ssh $host echo "login $host successfully!"
+		ssh $user@$host echo "login $host successfully!"
 	done
 }
 
@@ -50,9 +50,9 @@ count=1
 
 for host in ${hosts[@]}
 do
-	echo "Copying $kf [$count/$total]: $USER@$host ..."
+	echo "Copying $kf [$count/$total]: $user@$host ..."
 	# TODO: no-interactive support
-	ssh-copy-id $host
+	ssh-copy-id $user@$host
 
 	((count++))
 	echo

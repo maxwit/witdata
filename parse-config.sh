@@ -11,12 +11,6 @@ if [ -e .config ]; then
 	user=`get_value 'user'`
 fi
 
-if [ ${#slaves[@]} -eq 0 ]; then
-	mode="pseudo"
-else
-	mode="cluster"
-fi
-
 if [ -z "$user" ]; then
 	user="$USER"
 fi
@@ -27,3 +21,7 @@ if [ -z "$master" ]; then
 fi
 
 hosts=($master $slaves)
+
+# FIXME
+hadoop='hadoop-2.7.1'
+
