@@ -2,7 +2,7 @@
 
 temp=`mktemp`
 
-echo > $temp << EOF
+cat > $temp << EOF
 master=node1.jerry
 slave1=node2.jerry
 slave2=node3.jerry
