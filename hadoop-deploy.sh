@@ -64,7 +64,7 @@ fi
 
 bin/hdfs namenode -format
 
-grep HADOOP_HOME ~/.profile || echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.profile
+grep HADOOP_HOME ~/.bashrc || echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.bashrc
 
 sbin/start-dfs.sh || exit 1
 echo

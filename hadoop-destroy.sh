@@ -23,4 +23,4 @@ if [ -d $HADOOP_HOME ]; then
 	done
 fi
 
-sed -i '/export HADOOP_HOME/d' ~/.profile
+sed -i '/export HADOOP_HOME/d' ~/.bashrc
