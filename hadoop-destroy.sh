@@ -14,8 +14,8 @@ if [ -d $HADOOP_HOME ]; then
 	for slave in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
 	do
 		echo "removing $HADOOP_HOME @ $slave"
-		sshh $slave rm -rf $HADOOP_HOME || exit 1
-		sshh $slave rm -rf /tmp/hadoop-$USER || exit 1
+		ssh $slave rm -rf $HADOOP_HOME || exit 1
+		ssh $slave rm -rf /tmp/hadoop-$USER || exit 1
 		#if [ $slave = 'localhost' ]; then
 		#	ssh_cmd=""
 		#else
