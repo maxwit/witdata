@@ -1,5 +1,18 @@
 #!/bin/sh
 
+if [ -z "$GIT_BRANCH" ]; then
+	BRANCH=`git branch | awk '/^*/ {print $2}'`
+else
+	BRANCH=`basename $GIT_BRANCH`
+fi
+pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
+
+cat > .config << EOF
+master = node1.$pusher
+slaves = node2.$pusher node3.$pusher
+user = hadoop
+EOF
+
 cwd=`basename $PWD`
 
 for witpub in /mnt/witpub /mnt/hgfs/witpub
@@ -18,19 +31,6 @@ fi
 
 hadoop=`basename $tarball`
 
-if [ -z "$GIT_BRANCH" ]; then
-	BRANCH=`git branch | awk '/^*/ {print $2}'`
-else
-	BRANCH=`basename $GIT_BRANCH`
-fi
-pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
-
-cat > .config << EOF
-master = node1.$pusher
-slaves = node2.$pusher node3.$pusher
-user = hadoop
-EOF
-
 . ./parse-config.sh
 
 echo "copying $cwd to $user@$master ..."
@@ -46,7 +46,7 @@ echo
 #ssh $user@$master $cwd/setup-jdk.sh -t
 
 echo "destroying $user@$master ..."
-ssh $user@$master ${cwd}/destroy.sh || exit 1
+ssh $user@$master ${cwd}/local-destroy.sh || exit 1
 echo
 
 echo "copying $hadoop to $user@$master ..."
@@ -54,7 +54,7 @@ scp $tarball $user@$master:/tmp/
 echo
 
 echo "deploying ${hadoop%.tar*} ..."
-ssh $user@$master ${cwd}/deploy.sh /tmp/$hadoop || exit 1
+ssh $user@$master ${cwd}/local-deploy.sh /tmp/$hadoop || exit 1
 echo
 
 echo "removing /tmp/${hadoop} ..."
