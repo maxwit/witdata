@@ -12,7 +12,7 @@ if [ -d $HADOOP_HOME ]; then
 	do
 		echo "removing $HADOOP_HOME @ $slave"
 		ssh $slave rm -rf $HADOOP_HOME || exit 1
-		ssh $slave rm -rf /tmp/hadoop-$USER || exit 1
+		ssh $slave rm -rvf /tmp/hadoop-$USER || exit 1
 	done
 fi
 
