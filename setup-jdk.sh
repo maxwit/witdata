@@ -7,9 +7,9 @@ function jdk_test()
 {
 	for host in $@
 	do
-		echo "Validating JDK: $host ..."
-		scp target/check-jdk.sh $host:~/bin/
-		ssh $host ~/bin/check-jdk.sh
+		echo "Validating JDK: $user@$host ..."
+		scp target/check-jdk.sh $user@$host:~/bin/
+		ssh $user@$host ~/bin/check-jdk.sh || exit 1
 
 		((count++))
 		echo
@@ -89,12 +89,12 @@ count=1
 
 for host in ${hosts[@]}
 do
-	echo "Installing JDK [$count/$total]: $USER@$host ..."
+	echo "Installing JDK [$count/$total]: $user@$host ..."
 
-	ssh $host mkdir -vp bin
-	scp target/install-jdk.sh $host:~/bin/
-	scp $opt_jdk $host:
-	ssh $host ~/bin/install-jdk.sh $jdk
+	ssh $user@$host mkdir -vp bin
+	scp target/install-jdk.sh $user@$host:~/bin/
+	scp $opt_jdk $user@$host:
+	ssh $user@$host ~/bin/install-jdk.sh $jdk
 
 	((count++))
 	echo
