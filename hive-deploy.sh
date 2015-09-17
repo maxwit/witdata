@@ -14,21 +14,16 @@ if [ -z "$JAVA_HOME" ]; then
 	exit 1
 fi
 
-repo='/mnt/witpub/devel/hadoop/apache-hive-1.2.1-bin.tar.gz'
-hive_tarball=$repo
-hive=`basename $hive_tarball`
-hives=(${hive//-/ })
-new_hive=${hives[1]}-${hives[2]}
-old_name=${hive%%.tar.*}
-
+repo='/mnt/witpub/devel/hadoop/'
+hive='apache-hive-1.2.1-bin'
+hive_tarball=$hive.tar.gz
 
 cd
 echo "extracting $hive ..."
-tar xf $repo || exit 1
-mv $old_name $new_hive
+tar xf $repo/$hive_tarball || exit 1
 
 grep HIVE_HOME ~/.bashrc || cat >> ~/.bashrc <<EOF 
-export HIVE_HOME=$HOME/hive-1.2.1
-export PATH=$PATH:$HIVE_HOME/bin
-export HIVE_CONF_DIR=$HIVE_HOME/conf
+export HIVE_HOME=$HOME/$hive
+export PATH=\$PATH:\$HIVE_HOME/bin
+export HIVE_CONF_DIR=\$HIVE_HOME/conf
 EOF
