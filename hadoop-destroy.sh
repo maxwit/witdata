@@ -4,9 +4,6 @@ master=`hostname`
 
 [ -z "$HADOOP_HOME" ] && exit 0
 
-# FIXME
-cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-
 if [ -d $HADOOP_HOME ]; then
 	$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
 	$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
