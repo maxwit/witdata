@@ -9,12 +9,12 @@ pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
 
 cat > .config << EOF
 [hadoop]
-master = node1.$pusher
-slaves = node2.$pusher node3.$pusher
+master = $push-node1.maxwit.com
+slaves = $push-node2.maxwit.com $push-node3.maxwit.com
 
 [hive]
 
 [zookeeper]
 EOF
 
-./remote-deploy.sh -u hadoop -m node1.$pusher || exit 1
+./remote-deploy.sh -u hadoop -m $push-node1.maxwit.com || exit 1
