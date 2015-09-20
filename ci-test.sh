@@ -1,20 +1,25 @@
 #!/bin/sh
 
 if [ -z "$GIT_BRANCH" ]; then
-	BRANCH=`git branch | awk '/^*/ {print $2}'`
+	BRANCH=`git branch | awk '$1 == "*" {print $2}'`
 else
 	BRANCH=`basename $GIT_BRANCH`
 fi
 pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
 
+if [ -z "$pusher" ]; then
+	echo "branch not detected!"
+	exit 1
+fi
+
 cat > .config << EOF
 [hadoop]
-master = $push-node1.maxwit.com
-slaves = $push-node2.maxwit.com $push-node3.maxwit.com
+master = $pusher-node1.maxwit.com
+slaves = $pusher-node2.maxwit.com $pusher-node3.maxwit.com
 
 [hive]
 
 [zookeeper]
 EOF
 
-./remote-deploy.sh -u hadoop -m $push-node1.maxwit.com || exit 1
+./remote-deploy.sh -u hadoop -m $pusher-node1.maxwit.com || exit 1
