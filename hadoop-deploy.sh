@@ -62,7 +62,13 @@ fi
 
 bin/hdfs namenode -format
 
-grep HADOOP_HOME ~/.bashrc || echo "export HADOOP_HOME=\$HOME/$hadoop" >> ~/.bashrc
+if [ -e /etc/redhat-release ]; then
+	sh_config="$HOME/.bashrc"
+else
+	sh_config="$HOME/.profile"
+fi
+
+grep HADOOP_HOME $sh_config || echo "export HADOOP_HOME=\$HOME/$hadoop" >> $sh_config
 
 sbin/start-dfs.sh || exit 1
 echo

@@ -23,4 +23,11 @@ if [ -d $HADOOP_HOME ]; then
 	done
 fi
 
-sed -i '/export HADOOP_HOME/d' ~/.bashrc
+if [ -e /etc/redhat-release ]; then
+	sh_config="$HOME/.bashrc"
+else
+	sh_config="$HOME/.profile"
+fi
+
+sed -i '/export HADOOP_HOME/d' $sh_config && \
+echo "'export HADOOP_HOME' removed from $sh_config" $sh_config

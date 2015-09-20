@@ -6,7 +6,8 @@ if [ "$HADOOP_HOME" == "" ]; then
 fi
 
 if [ "$HIVE_HOME" != "" ]; then
-	echo -e "Warning: previous hive already installed!\n"
+	echo -e "Hive already installed!\n"
+	exit 1
 fi
 
 if [ -z "$JAVA_HOME" ]; then
@@ -19,11 +20,14 @@ fi
 echo "extracting $hive ..."
 tar xf $repo/${hive}.tar.gz -C $HOME || exit 1
 
-# FIXME
-sed -i '/HIVE_/d' ~/.bashrc
+if [ -e /etc/redhat-release ]; then
+	sh_config="$HOME/.bashrc"
+else
+	sh_config="$HOME/.profile"
+fi
 
-cat >> ~/.bashrc << EOF
+cat >> $sh_config << EOF
 export HIVE_HOME=\$HOME/$hive
-export PATH=\$PATH:\$HIVE_HOME/bin
 export HIVE_CONF_DIR=\$HIVE_HOME/conf
+export PATH=\$PATH:\$HIVE_HOME/bin
 EOF
