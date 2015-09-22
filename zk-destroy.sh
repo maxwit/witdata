@@ -8,7 +8,6 @@ zk=`basename $ZOOKEEPER_HOME`
 echo "stoping $zk ..."
 cd $ZOOKEEPER_HOME
 bin/zkServer.sh stop || exit 1
-echo
 
 echo "removing $zk ..."
 if [ -d $ZOOKEEPER_HOME ]; then
@@ -21,6 +20,6 @@ else
 	sh_config="$HOME/.profile"
 fi
 
-sed -i '/\<ZOOKEEPER_/d' $sh_config
+sed -i '/ZOOKEEPER_HOME/d' $sh_config
 
 echo "Done."

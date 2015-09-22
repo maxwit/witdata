@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ -z "$JAVA_HOME" ]; then
+	echo -e "JAVA_HOME not set!\n"
+	exit 1
+fi
+
 if [ "$HADOOP_HOME" == "" ]; then
 	echo -e "Warning:hadoop do not installed!\n"
 	exit 1
@@ -7,11 +12,6 @@ fi
 
 if [ "$HIVE_HOME" != "" ]; then
 	echo -e "Hive already installed!\n"
-	exit 1
-fi
-
-if [ -z "$JAVA_HOME" ]; then
-	echo -e "JAVA_HOME not set!\n"
 	exit 1
 fi
 

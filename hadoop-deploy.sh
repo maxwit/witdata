@@ -3,13 +3,13 @@
 cd `dirname $0`
 top=$PWD
 
-if [ "$HADOOP_HOME" != "" ]; then
-	echo -e "Warning: previous hadoop ($HADOOP_HOME) already installed!\n"
-fi
-
 if [ -z "$JAVA_HOME" ]; then
 	echo -e "JAVA_HOME not set!\n"
 	exit 1
+fi
+
+if [ "$HADOOP_HOME" != "" ]; then
+	echo -e "Warning: previous hadoop ($HADOOP_HOME) already installed!\n"
 fi
 
 . ./parse-config.sh

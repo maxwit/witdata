@@ -2,13 +2,13 @@
 
 cd `dirname $0`
 
-if [ "$ZOOKEEPER_HOME" != "" ]; then
-	echo -e "Hive already installed!\n"
+if [ -z "$JAVA_HOME" ]; then
+	echo -e "JAVA_HOME not set!\n"
 	exit 1
 fi
 
-if [ -z "$JAVA_HOME" ]; then
-	echo -e "JAVA_HOME not set!\n"
+if [ "$ZOOKEEPER_HOME" != "" ]; then
+	echo -e "ZooKeeper already installed!\n"
 	exit 1
 fi
 
