@@ -3,8 +3,6 @@
 # FIXME
 master=`hostname`
 
-echo -n "validating hadoop on $USER@$master: "
-
 if [ -z "$HADOOP_HOME" ]; then
 	echo "not installed"
 	exit 1

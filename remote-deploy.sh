@@ -44,7 +44,7 @@ echo
 
 # setup-ssh.sh
 # setup-jdk.sh
-for app in hadoop
+for app in zk
 do
 	echo "##################################"
 	echo "             $app"

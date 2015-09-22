@@ -68,7 +68,7 @@ else
 	sh_config="$HOME/.profile"
 fi
 
-grep HADOOP_HOME $sh_config || echo "export HADOOP_HOME=\$HOME/$hadoop" >> $sh_config
+grep HADOOP_HOME $sh_config || echo "export HADOOP_HOME=$PWD" >> $sh_config
 
 sbin/start-dfs.sh || exit 1
 echo
