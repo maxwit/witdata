@@ -49,13 +49,9 @@ if [ $mode = "cluster" ]; then
 		sed -i "s/__MASTER__/$master/g" etc/hadoop/${cfg}-site.xml || exit 1
 	done
 
-	# TODO: tar and copy
 	for slave in ${slaves[@]}
 	do
-		echo -n "copying $hadoop to $slave .."
-		ssh $slave rm -rf $hadoop || exit 1
-		echo '.'
-		scp -r $PWD ${slave}: || exit 1
+		./tar-and-scp $PWD ${slave} || exit 1
 	done
 	echo
 fi

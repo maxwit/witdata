@@ -29,17 +29,8 @@ EOF
 user=hadoop
 wd=`basename $PWD`
 
-echo -n "copying $wd to $user@$master .."
-ssh $user@$master rm -rf $wd
-echo '.'
-if [ -d .git ]; then
-	temp=`mktemp -d`
-	cp -r $PWD $temp
-	rm -rf $temp/$wd/.git*
-	scp -r $temp/$wd $user@$master:
-else
-	scp -r $PWD $user@$master:
-fi
-echo
+./tar-and-scp $PWD $user@$master
 
 ssh $user@$master $wd/deploy-all.sh || exit 1
+
+ssh $user@$master rm -rf $wd

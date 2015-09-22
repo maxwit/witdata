@@ -7,7 +7,7 @@ cd `dirname $0`
 
 for app in zk
 do
-	for seq in $app-destroy.sh $app-deploy.sh # $app-validate.sh
+	for seq in $app-destroy.sh $app-deploy.sh $app-validate.sh
 	do
 		echo "##################################"
 		echo "    executing $seq"
