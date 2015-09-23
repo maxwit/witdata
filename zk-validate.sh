@@ -19,6 +19,7 @@ ls
 ls bin/
 bin/zkCli.sh -server 127.0.0.1:2181 << EOF
 create /zk_test my_data
+get /zk_test
 ls /
 EOF
 
