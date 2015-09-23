@@ -51,7 +51,7 @@ if [ $mode = "cluster" ]; then
 
 	for slave in ${slaves[@]}
 	do
-		./tar-and-scp $PWD ${slave} || exit 1
+		$top/tar-and-scp $PWD ${slave} || exit 1
 	done
 	echo
 fi
