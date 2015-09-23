@@ -20,6 +20,7 @@ ls /
 get /zk_demo
 set /zk_demo demo2
 get /zk_demo
+delete /zk_demo
 EOF
 
 exit $?
