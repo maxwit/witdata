@@ -1,20 +1,19 @@
 #!/bin/sh
 
-if [ -z "$GIT_BRANCH" ]; then
-	BRANCH=`git branch | awk '$1 == "*" {print $2}'`
-else
+if [ ! -z "$GIT_BRANCH" ]; then
 	BRANCH=`basename $GIT_BRANCH`
+else
+	BRANCH=`git branch | awk '$1 == "*" {print $2}'`
 fi
+
 pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
 
-if [ ! -z "$pusher" ]; then
-	master="$pusher-node1.maxwit.com"
-	slaves="$pusher-node2.maxwit.com $pusher-node3.maxwit.com"
-else
-	# FIXME
-	master=`hostname`
-	slaves="${master//1/2} ${master//1/3}"
+if [ -z "$pusher" ]; then
+	pusher=$USER
 fi
+
+master="$pusher-node1.maxwit.com"
+slaves="$pusher-node2.maxwit.com $pusher-node3.maxwit.com"
 
 cat > .config << EOF
 [hadoop]
