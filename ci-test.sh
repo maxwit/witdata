@@ -28,8 +28,13 @@ EOF
 user=hadoop
 wd=`basename $PWD`
 
-./tar-and-scp $PWD $user@$master
+./tar-and-scp $PWD $user@$master || exit 1
 
-ssh $user@$master $wd/deploy-all.sh || exit 1
+ssh $user@$master << EOF
+$wd/deploy-all.sh -d
+EOF
 
-ssh $user@$master rm -rf $wd
+ssh $user@$master << EOF
+$wd/deploy-all.sh
+EOF
+exit $?

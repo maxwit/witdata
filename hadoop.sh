@@ -1,0 +1,135 @@
+function hadoop_deploy
+{
+	if [ "$HADOOP_HOME" != "" ]; then
+		echo -e "hadoop already installed ($HADOOP_HOME)!\n"
+		exit 1
+	fi
+
+	if [ ${#slaves[@]} -ne 0 ]; then
+		mode="cluster"
+	else
+		mode="pseudo"
+	fi
+
+	echo -e "configure hadoop in $mode mode!\n"
+	echo "Cluster nodes: ${hosts[@]}"
+
+	echo "extracting $hadoop ..."
+	tar xf $repo/${hadoop}.tar.gz -C $HOME || exit 1
+
+	cd $HOME/$hadoop
+
+	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
+
+	bin/hadoop version || exit 1
+	echo
+
+	### configure sites ###
+	cp -v etc/hadoop/mapred-site.xml{.template,}
+	patch -p1 < $top/patch/configure-${mode}-sites.patch || exit 1
+
+	if [ $mode = "cluster" ]; then
+		truncate --size 0 etc/hadoop/slaves
+		for slave in ${slaves[@]}
+		do
+			echo $slave >> etc/hadoop/slaves
+		done
+
+		for cfg in core hdfs mapred yarn
+		do
+			sed -i "s/__MASTER__/$master/g" etc/hadoop/${cfg}-site.xml || exit 1
+		done
+
+		for slave in ${slaves[@]}
+		do
+			$top/tar-and-scp $PWD ${slave} || exit 1
+		done
+		echo
+	fi
+
+	bin/hdfs namenode -format
+
+	if [ -e /etc/redhat-release ]; then
+		sh_config="$HOME/.bashrc"
+	else
+		sh_config="$HOME/.profile"
+	fi
+
+	grep HADOOP_HOME $sh_config || echo "export HADOOP_HOME=$PWD" >> $sh_config
+
+	sbin/start-dfs.sh || exit 1
+	echo
+
+	sbin/start-yarn.sh || exit 1
+	echo
+
+	# FIXME: right here?
+	# mkdir -p tmp hdfs hdfs/data hdfs/name
+	bin/hadoop fs -ls /
+	bin/hadoop fs -mkdir /tmp
+	bin/hadoop fs -chmod g+w /tmp
+}
+
+function hadoop_destroy
+{
+[ -z "$HADOOP_HOME" ] && return 0
+
+if [ -d $HADOOP_HOME ]; then
+	$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
+	$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
+
+	for slave in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
+	do
+		echo "removing $HADOOP_HOME @ $slave"
+		ssh $slave rm -rf $HADOOP_HOME || exit 1
+		ssh $slave rm -rf /tmp/hadoop-$USER || exit 1
+		#if [ $slave = 'localhost' ]; then
+		#	ssh_cmd=""
+		#else
+		#	ssh_cmd="ssh $slave"
+		#fi
+		#$ssh_cmd rm -rf $HADOOP_HOME || exit 1
+		#$ssh_cmd rm -rf /tmp/hadoop-$USER || exit 1
+	done
+fi
+
+if [ -e /etc/redhat-release ]; then
+	sh_config="$HOME/.bashrc"
+else
+	sh_config="$HOME/.profile"
+fi
+
+sed -i '/export HADOOP_HOME/d' $sh_config && \
+echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
+}
+
+function hadoop_validate
+{
+# FIXME
+master=`hostname`
+if [ -z "$HADOOP_HOME" ]; then
+	echo "not installed"
+	return 1
+else
+	echo "$HADOOP_HOME"
+fi
+echo
+
+temp=`mktemp`
+date > $temp
+
+echo "putting $temp to master ..."
+$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || exit 1
+echo
+
+for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
+do
+	echo "checking '$slave' ..."
+	ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || exit 1
+done
+echo
+
+echo "removing $temp ..."
+#ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
+echo
+}

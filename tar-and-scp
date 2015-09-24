@@ -7,9 +7,13 @@ wd=`basename $src`
 temp=`mktemp -d`
 
 echo "copying $wd -> $dst ..."
+
 cp -r $src $temp && cd $temp && tar cf $wd.tar $wd || exit 1
 scp $wd.tar $dst: || exit 1
-ssh $dst rm -rf $wd
-ssh $dst tar xf $wd.tar
-ssh $dst rm -f $wd.tar
 rm -rf $temp
+
+ssh $dst << EOF
+rm -rf $wd
+tar xf $wd.tar
+rm -f $wd.tar
+EOF
