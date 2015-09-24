@@ -72,64 +72,64 @@ function hadoop_deploy
 
 function hadoop_destroy
 {
-[ -z "$HADOOP_HOME" ] && return 0
+	[ -z "$HADOOP_HOME" ] && return 0
 
-if [ -d $HADOOP_HOME ]; then
-	$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
-	$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
+	if [ -d $HADOOP_HOME ]; then
+		$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
+		$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
 
-	for slave in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
-	do
-		echo "removing $HADOOP_HOME @ $slave"
-		ssh $slave rm -rf $HADOOP_HOME || exit 1
-		ssh $slave rm -rf /tmp/hadoop-$USER || exit 1
-		#if [ $slave = 'localhost' ]; then
-		#	ssh_cmd=""
-		#else
-		#	ssh_cmd="ssh $slave"
-		#fi
-		#$ssh_cmd rm -rf $HADOOP_HOME || exit 1
-		#$ssh_cmd rm -rf /tmp/hadoop-$USER || exit 1
-	done
-fi
+		for slave in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
+		do
+			echo "removing $HADOOP_HOME @ $slave"
+			ssh $slave rm -rf $HADOOP_HOME || exit 1
+			ssh $slave rm -rf /tmp/hadoop-$USER || exit 1
+			#if [ $slave = 'localhost' ]; then
+			#	ssh_cmd=""
+			#else
+			#	ssh_cmd="ssh $slave"
+			#fi
+			#$ssh_cmd rm -rf $HADOOP_HOME || exit 1
+			#$ssh_cmd rm -rf /tmp/hadoop-$USER || exit 1
+		done
+	fi
 
-if [ -e /etc/redhat-release ]; then
-	sh_config="$HOME/.bashrc"
-else
-	sh_config="$HOME/.profile"
-fi
+	if [ -e /etc/redhat-release ]; then
+		sh_config="$HOME/.bashrc"
+	else
+		sh_config="$HOME/.profile"
+	fi
 
-sed -i '/export HADOOP_HOME/d' $sh_config && \
-echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
+	sed -i '/export HADOOP_HOME/d' $sh_config && \
+	echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
 }
 
 function hadoop_validate
 {
-# FIXME
-master=`hostname`
-if [ -z "$HADOOP_HOME" ]; then
-	echo "not installed"
-	return 1
-else
-	echo "$HADOOP_HOME"
-fi
-echo
+	# FIXME
+	master=`hostname`
+	if [ -z "$HADOOP_HOME" ]; then
+		echo "not installed"
+		return 1
+	else
+		echo "$HADOOP_HOME"
+	fi
+	echo
 
-temp=`mktemp`
-date > $temp
+	temp=`mktemp`
+	date > $temp
 
-echo "putting $temp to master ..."
-$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || exit 1
-echo
+	echo "putting $temp to master ..."
+	$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || exit 1
+	echo
 
-for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
-do
-	echo "checking '$slave' ..."
-	ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || exit 1
-done
-echo
+	for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
+	do
+		echo "checking '$slave' ..."
+		ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || exit 1
+	done
+	echo
 
-echo "removing $temp ..."
-#ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
-echo
+	echo "removing $temp ..."
+	#ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
+	echo
 }

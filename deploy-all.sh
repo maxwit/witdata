@@ -1,6 +1,7 @@
 #!/bin/sh
 
 destroy=0
+
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -40,9 +41,9 @@ do
 		exit 1
 	fi
 
-	. $top/$app.sh
+	. $TOP/$app.sh
 
-	cd $top
+	cd $TOP
 
 	if [ $destroy -eq 0 ]; then
 		execute ${app}_deploy || exit 1

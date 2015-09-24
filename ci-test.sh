@@ -31,10 +31,10 @@ wd=`basename $PWD`
 ./tar-and-scp $PWD $user@$master || exit 1
 
 ssh $user@$master << EOF
-$wd/deploy-all.sh -d
+$wd/deploy-all.sh -d || exit 1
 EOF
 
 ssh $user@$master << EOF
-$wd/deploy-all.sh
+$wd/deploy-all.sh || exit 1
 EOF
 exit $?
