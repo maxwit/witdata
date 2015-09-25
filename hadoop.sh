@@ -2,7 +2,7 @@ function hadoop_deploy
 {
 	if [ "$HADOOP_HOME" != "" ]; then
 		echo -e "hadoop already installed ($HADOOP_HOME)!\n"
-		exit 1
+		return 0
 	fi
 
 	if [ ${#slaves[@]} -ne 0 ]; then
@@ -14,9 +14,7 @@ function hadoop_deploy
 	echo -e "configure hadoop in $mode mode!\n"
 	echo "Cluster nodes: ${hosts[@]}"
 
-	echo "extracting $hadoop ..."
-	tar xf $repo/${hadoop}.tar.gz -C $HOME || exit 1
-
+	extract $hadoop
 	cd $HOME/$hadoop
 
 	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
@@ -42,20 +40,14 @@ function hadoop_deploy
 
 		for slave in ${slaves[@]}
 		do
-			$top/tar-and-scp $PWD ${slave} || exit 1
+			$top/fast-scp $PWD ${slave} || exit 1
 		done
 		echo
 	fi
 
 	bin/hdfs namenode -format
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	grep HADOOP_HOME $sh_config || echo "export HADOOP_HOME=$PWD" >> $sh_config
+	update_export HADOOP_HOME $PWD
 
 	sbin/start-dfs.sh || exit 1
 	echo
@@ -93,14 +85,8 @@ function hadoop_destroy
 		done
 	fi
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	sed -i '/export HADOOP_HOME/d' $sh_config && \
-	echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
+	del_export HADOOP_HOME
+	# echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
 }
 
 function hadoop_validate
@@ -109,7 +95,7 @@ function hadoop_validate
 	master=`hostname`
 	if [ -z "$HADOOP_HOME" ]; then
 		echo "not installed"
-		return 1
+		exit 1
 	else
 		echo "$HADOOP_HOME"
 	fi

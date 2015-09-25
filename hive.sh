@@ -2,28 +2,19 @@ function hive_deploy
 {
 	if [ "$HIVE_HOME" != "" ]; then
 		echo -e "Hive already installed!\n"
-		return 1
+		exit 1
 	fi
 
 	if [ "$HADOOP_HOME" == "" ]; then
 		echo -e "hadoop not installed!\n"
-		return 1
+		exit 1
 	fi
 
-	echo "extracting $hive ..."
-	tar xf $repo/${hive}.tar.gz -C $HOME || exit 1
+	extract $hive
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	cat >> $sh_config << EOF
-export HIVE_HOME=\$HOME/$hive
-export HIVE_CONF_DIR=\$HIVE_HOME/conf
-export PATH=\$PATH:\$HIVE_HOME/bin
-EOF
+	update_export HIVE_HOME "\$HOME/$hive"
+	update_export HIVE_CONF_DIR "\$HIVE_HOME/conf"
+	add_path "\$HIVE_HOME/bin"
 }
 
 function hive_destroy
@@ -34,13 +25,9 @@ function hive_destroy
 		rm -rf $HIVE_HOME
 	fi
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	sed -i '/\<HIVE_/d' $sh_config
+	del_export HIVE_HOME
+	del_export HIVE_CONF_DIR
+	del_path "\$HIVE_HOME/bin"
 }
 
 function hive_validate

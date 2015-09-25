@@ -5,25 +5,11 @@ function zk_deploy
 		exit 1
 	fi
 
-	. ./parse-config.sh
-
-	echo "extracting $zk ..."
-	tar xf $repo/${zk}.tar.gz -C $HOME || {
-		echo "extract failed!"
-		exit 1
-	}
+	extract $zk
 
 	cd $HOME/$zk
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	cat >> $sh_config << EOF
-export ZOOKEEPER_HOME=\$HOME/$zk
-EOF
+	update_export ZOOKEEPER_HOME \$HOME/$zk
 
 	cp -v conf/zoo{_sample,}.cfg || exit 1
 	bin/zkServer.sh start || exit 1
@@ -43,13 +29,7 @@ function zk_destroy
 		rm -rf $ZOOKEEPER_HOME || exit 1
 	fi
 
-	if [ -e /etc/redhat-release ]; then
-		sh_config="$HOME/.bashrc"
-	else
-		sh_config="$HOME/.profile"
-	fi
-
-	sed -i '/ZOOKEEPER_HOME/d' $sh_config
+	del_export ZOOKEEPER_HOME
 }
 
 function zk_validate
