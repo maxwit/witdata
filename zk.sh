@@ -19,13 +19,12 @@ function zk_destroy
 {
 	[ -z "$ZOOKEEPER_HOME" ] && exit 0
 
-	zk=`basename $ZOOKEEPER_HOME`
-	echo "stoping $zk ..."
-	cd $ZOOKEEPER_HOME
-	bin/zkServer.sh stop || exit 1
-
-	echo "removing $zk ..."
-	if [ -d $ZOOKEEPER_HOME ]; then
+	if [ -d "$ZOOKEEPER_HOME" ]; then
+		zk=`basename $ZOOKEEPER_HOME`
+		echo "stoping $zk ..."
+		cd $ZOOKEEPER_HOME
+		bin/zkServer.sh stop || exit 1
+		echo "removing $zk ..."
 		rm -rf $ZOOKEEPER_HOME || exit 1
 	fi
 

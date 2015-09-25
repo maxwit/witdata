@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cd `dirname $0`
-top=$PWD
+TOP=$PWD
 
 function ssh_setup()
 {

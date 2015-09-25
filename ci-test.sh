@@ -33,6 +33,7 @@ wd=`basename $PWD`
 ssh $user@$master << EOF
 $wd/deploy-all.sh -d || exit 1
 EOF
+echo
 
 ssh $user@$master << EOF
 $wd/deploy-all.sh || exit 1

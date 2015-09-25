@@ -24,7 +24,7 @@ function hadoop_deploy
 
 	### configure sites ###
 	cp -v etc/hadoop/mapred-site.xml{.template,}
-	patch -p1 < $top/patch/configure-${mode}-sites.patch || exit 1
+	patch -p1 < $TOP/patch/configure-${mode}-sites.patch || exit 1
 
 	if [ $mode = "cluster" ]; then
 		truncate --size 0 etc/hadoop/slaves
@@ -40,7 +40,7 @@ function hadoop_deploy
 
 		for slave in ${slaves[@]}
 		do
-			$top/fast-scp $PWD ${slave} || exit 1
+			$TOP/fast-scp $PWD ${slave} || exit 1
 		done
 		echo
 	fi
