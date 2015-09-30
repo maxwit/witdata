@@ -3,7 +3,7 @@
 cd `dirname $0`
 TOP=$PWD
 
-function ssh_setup()
+function ssh_setup
 {
 	kt="rsa"
 	kf="id_$kt"
@@ -55,29 +55,53 @@ do
 	shift
 done
 
-function get_value()
-{
-	key=$1
-	line=`grep "^${key}\s*=" .config`
-	echo ${line#${key}*=}	
-}
-
 if [ -e .config ]; then
-	master=`get_value 'master'`
-	slaves=`get_value 'slaves'`
-	user=`get_value 'user'`
+	. ./.config
 fi
 
-if [ -z "$user" ]; then
-	user="$USER"
+if [ -n "$config_master" ]; then
+	master=$config_master
+else
+	master=`hostname` # FIXME
 fi
 
-if [ -z "$master" ]; then
-	# FIXME
-	master=`hostname`
+slaves=($config_slaves)
+
+if [ -n "$config_user" ]; then
+	user=$config_user
+else
+	user=$USER
 fi
 
 hosts=($master $slaves)
+
+if [ -n "$config_repo" ]; then
+	repo="$config_repo"
+else
+	repo='/mnt/witpub/cloud/hadoop/'
+fi
+
+apps=""
+
+if [ -n "$config_hadoop" ]; then
+	hadoop=$config_hadoop
+	apps="hadoop"
+fi
+
+if [ -n "$config_hive" ]; then
+	hive=$config_hive
+	apps="$apps hive"
+fi
+
+if [ -n "$config_zk" ]; then
+	zk=$config_zk
+	apps="$apps zk"
+fi
+
+if [ -n "$config_hbase" ]; then
+	hbase=$config_hbase
+	apps="$apps hbase"
+fi
 
 if [ $init -eq 1 ]; then
 	ssh_setup
@@ -88,13 +112,6 @@ if [ -z "$JAVA_HOME" ]; then
 	echo -e "JAVA_HOME not set!\n"
 	exit 1
 fi
-
-# FIXME
-repo='/mnt/witpub/cloud/hadoop/'
-
-hadoop='hadoop-2.7.1'
-hive='apache-hive-1.2.1-bin'
-zk='zookeeper-3.4.6'
 
 if [ -e /etc/redhat-release ]; then
 	profile="$HOME/.bash_profile"
@@ -155,14 +172,21 @@ function extract
 function execute
 {
 	func=$1
+
 	echo "#########################################"
 	echo "  executing $func() ..."
 	echo "#########################################"
+
 	$func
+	if [ $? -ne 0 ]; then
+		echo "fail to run $func!"
+		exit 1
+	fi
+
 	echo
 }
 
-for app in hadoop zk
+for app in $apps
 do
 	if [ ! -e ./$app.sh ]; then
 		echo "$app.sh does not exists!"
@@ -172,12 +196,12 @@ do
 	. ./$app.sh
 
 	if [ $destroy -eq 0 ]; then
-		execute ${app}_deploy || exit 1
+		execute ${app}_deploy
 		cd $TOP
-		execute ${app}_validate || exit 1
+		execute ${app}_validate
 		cd $TOP
 	else
-		execute ${app}_destroy || exit 1
+		execute ${app}_destroy
 		cd $TOP
 	fi
 

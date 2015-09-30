@@ -14,18 +14,18 @@ fi
 
 master="$pusher-node1.maxwit.com"
 slaves="$pusher-node2.maxwit.com $pusher-node3.maxwit.com"
+user="hadoop"
 
 cat > .config << EOF
-[hadoop]
-master = $master
-slaves = $slaves
+config_user="$user"
+config_master="$master"
+config_slaves="$slaves"
 
-[hive]
-
-[zookeeper]
+#config_hadoop="hadoop-2.7.1"
+#config_hive="apache-hive-1.2.1-bin"
+config_zk="zookeeper-3.4.6"
 EOF
 
-user=hadoop
 wd=`basename $PWD`
 
 ./fast-scp $PWD $user@$master || exit 1
