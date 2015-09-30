@@ -5,12 +5,6 @@ function hadoop_deploy
 		return 0
 	fi
 
-	if [ ${#slaves[@]} -ne 0 ]; then
-		mode="cluster"
-	else
-		mode="pseudo"
-	fi
-
 	echo -e "configure hadoop in $mode mode!\n"
 	echo "Cluster nodes: ${hosts[@]}"
 

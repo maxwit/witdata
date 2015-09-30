@@ -55,7 +55,7 @@ do
 	shift
 done
 
-if [ -e .config ]; then
+if [ -e ./.config ]; then
 	. ./.config
 fi
 
@@ -66,6 +66,13 @@ else
 fi
 
 slaves=($config_slaves)
+hosts=($master $config_slaves)
+
+if [ ${#hosts[@]} -ne 1 ]; then
+	mode="cluster"
+else
+	mode="pseudo"
+fi
 
 if [ -n "$config_user" ]; then
 	user=$config_user
@@ -73,13 +80,20 @@ else
 	user=$USER
 fi
 
-hosts=($master $slaves)
-
 if [ -n "$config_repo" ]; then
 	repo="$config_repo"
 else
 	repo='/mnt/witpub/cloud/hadoop/'
 fi
+
+# FIXME: only for hbase and zk
+if [ -n "$config_data_root" ]; then
+	data_root="$config_data_root"
+else
+	data_root="$HOME/data"
+fi
+rm -rf $data_root
+mkdir -p $data_root
 
 apps=""
 
@@ -95,7 +109,7 @@ fi
 
 if [ -n "$config_zk" ]; then
 	zk=$config_zk
-	apps="$apps zk"
+	apps="$apps zookeeper"
 fi
 
 if [ -n "$config_hbase" ]; then
@@ -162,11 +176,18 @@ function del_path
 function extract
 {
 	pkg=$1
-	echo "extracting $pkg ..."
-	tar xf $repo/${pkg}.tar.gz -C $HOME || {
-		echo "extract failed!"
+	if [ -n "$2" ]; then
+		dir=$2
+	else
+		dir=$HOME
+	fi
+
+	echo -n "extracting $pkg ... "
+	tar xf $repo/${pkg}.tar.gz -C $dir || {
+		echo "failed"
 		exit 1
 	}
+	echo "done"
 }
 
 function execute
