@@ -14,40 +14,35 @@ function hbase_deploy
 	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${JAVA_HOME}:" conf/hbase-env.sh
 
 	temp=`mktemp`
-	if [ $mode = 'cluster' ]; then
-		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
-		cat > $temp << EOF
+
+	cat > $temp << EOF
   <property>
     <name>hbase.cluster.distributed</name>
     <value>true</value>
   </property>
   <property>
     <name>hbase.rootdir</name>
-    <value>hdfs://localhost:8020/hbase</value>
+    <value>hdfs://$master:9000/hbase</value>
   </property>
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>$data_root/zookeeper</value>
+  </property>
+EOF
+
+	if [ $mode = 'cluster' ]; then
+		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
+		echo "quorum = $quorum"
+		cat >> $temp << EOF
   <property>
     <name>hbase.zookeeper.quorum</name>
     <value>$quorum</value>
   </property>
-  <property>
-    <name>hbase.zookeeper.property.dataDir</name>
-    <value>$data_root/zookeeper</value>
-  </property>
-EOF
-	else
-		# FIXME: pseudo instead of standalone
-		cat > $temp << EOF
-  <property>
-    <name>hbase.rootdir</name>
-	<value>file://$data_root/hbase</value>
-  </property>
-  <property>
-    <name>hbase.zookeeper.property.dataDir</name>
-    <value>$data_root/zookeeper</value>
-  </property>
 EOF
 	fi
+
 	sed -i "/<configuration>/r $temp" conf/hbase-site.xml
+
 	rm $temp
 
 	if [ $mode = 'cluster' ]; then

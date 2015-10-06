@@ -59,21 +59,21 @@ if [ -e ./.config ]; then
 	. ./.config
 fi
 
-if [ -n "$config_master" ]; then
-	master=$config_master
+if [ -n "$config_slaves" ]; then
+	if [ -n "$config_master" ]; then
+		master=$config_master
+	else
+		master=`hostname`
+		# TODO: check master
+	fi
+	mode="cluster"
 else
-	master=`hostname` # FIXME
+	master='localhost'
+	mode="pseudo"
 fi
 
 slaves=($config_slaves)
 hosts=($master $config_slaves)
-
-if [ ${#hosts[@]} -gt 1 ]; then
-	mode="cluster"
-else
-	# TODO: support standalone
-	mode="pseudo"
-fi
 
 if [ -n "$config_repo" ]; then
 	repo="$config_repo"
@@ -81,7 +81,6 @@ else
 	repo='/mnt/witpub/cloud/hadoop/'
 fi
 
-# FIXME: only for hbase and zk
 if [ -n "$config_data_root" ]; then
 	data_root="$config_data_root"
 else
