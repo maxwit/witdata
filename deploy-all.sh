@@ -114,6 +114,10 @@ if [ -n "$config_hbase" ]; then
 	hbase=$config_hbase
 	apps="$apps hbase"
 fi
+if [ -n "$config_pig" ]; then
+	pig=$config_pig
+	apps="$apps pig"
+fi
 
 if [ $init -eq 1 ]; then
 	ssh_setup
