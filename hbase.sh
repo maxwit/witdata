@@ -74,7 +74,7 @@ EOF
 		done
 	fi
 
-	add_export HBASE_HOME
+	add_export HBASE_HOME $PWD
 
 	./bin/start-hbase.sh
 }
@@ -104,13 +104,13 @@ rm -rf $data_root/hbase
 EOF
 	done
 
-	del_export HBASE_HOME
+	sed -i '/HBASE_HOME/d' $profile
 }
 
 function hbase_validate
 {
 	if [ -z "$HBASE_HOME" -o ! -d "$HBASE_HOME" ]; then
-		echo "not installed"
+		echo "$hbase not installed"
 		exit 1
 	fi
 

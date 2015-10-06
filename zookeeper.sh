@@ -74,7 +74,7 @@ rm -rf $data_root/zookeeper
 EOF
 	done
 
-	del_export ZOOKEEPER_HOME
+	sed -i '/ZOOKEEPER_HOME/d' $profile
 }
 
 function zookeeper_validate

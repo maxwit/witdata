@@ -24,8 +24,7 @@ function hive_destroy
 		rm -rf $HIVE_HOME
 	fi
 
-	del_export HIVE_HOME
-	del_path '$HIVE_HOME/bin'
+	sed -i '/HIVE_HOME/d' $profile
 }
 
 function hive_validate

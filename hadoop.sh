@@ -1,6 +1,6 @@
 function hadoop_deploy
 {
-	if [ "$HADOOP_HOME" != "" ]; then
+	if [ -n "$HADOOP_HOME" ]; then
 		echo -e "hadoop already installed ($HADOOP_HOME)!\n"
 		return 0
 	fi
@@ -25,6 +25,10 @@ function hadoop_deploy
 	<property>
 		<name>fs.defaultFS</name>
 		<value>hdfs://$master:9000</value>
+	</property>
+	<property>
+		<name>hadoop.tmp.dir</name>
+		<value>$data_root/tmp</value>
 	</property>
 EOF
 		cat > $temp/hdfs << EOF
@@ -87,6 +91,10 @@ EOF
         <name>fs.defaultFS</name>
         <value>hdfs://localhost:9000</value>
     </property>
+	<property>
+		<name>hadoop.tmp.dir</name>
+		<value>$data_root/tmp</value>
+	</property>
 EOF
 		cat > $temp/hdfs << EOF
     <property>
@@ -136,8 +144,9 @@ EOF
 
 	sbin/start-dfs.sh || exit 1
 	echo
-
 	sbin/start-yarn.sh || exit 1
+	echo
+	sbin/mr-jobhistory-daemon.sh start historyserver || exit 1
 	echo
 
 	# FIXME: right here?
@@ -149,25 +158,28 @@ EOF
 
 function hadoop_destroy
 {
-	[ -z "$HADOOP_HOME" ] && return 0
+	if [ -z "$HADOOP_HOME" ]; then
+		echo "hadoop not installed!"
+		return 0
+	fi
 
 	if [ -d $HADOOP_HOME ]; then
 		$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
 		$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
+		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || exit 1
 	fi
+	echo
 
 	for host in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
 	do
 		echo "removing $HADOOP_HOME @ $host"
 		ssh $host << EOF
 rm -rf $HADOOP_HOME
-rm -rf /tmp/hadoop-$USER
 EOF
 	done
 
-	del_export HADOOP_HOME
+	sed -i '/HADOOP_HOME/d' $profile
 	#del_export HADOOP_CONF_DIR
-	del_path '$HADOOP_HOME/bin'
 }
 
 function hadoop_validate

@@ -25,9 +25,7 @@ function pig_destroy
 		rm -rf $PIG_HOME
 	fi
 
-	del_export PIG_HOME
-	del_export PIG_CLASSPATH
-	del_path '$PIG_HOME/bin'
+	sed -i '/PIG_/d' $profile
 }
 
 function pig_validate
