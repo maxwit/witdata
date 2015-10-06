@@ -209,6 +209,6 @@ function hadoop_validate
 	echo
 
 	echo "removing $temp ..."
-	#ssh $master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
+	$HADOOP_HOME/bin/hadoop fs -rm $temp || exit 1
 	echo
 }
