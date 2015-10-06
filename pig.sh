@@ -12,10 +12,10 @@ function pig_deploy
 
 	extract $pig
 
-	update_export PIG_HOME "\$HOME/$pig"
-	update_export PIG_CLASSPATH "\$HADOOP_HOME/etc/hadoop"
-	update_export HADOOP_CONF_DIR "\$HADOOP_HOME/etc/hadoop"
-	add_path "\$PIG_HOME/bin"
+	add_export PIG_HOME "\$HOME/$pig"
+	add_export PIG_CLASSPATH '$HADOOP_HOME/etc/hadoop'
+	add_export HADOOP_CONF_DIR '$HADOOP_HOME/etc/hadoop'
+	add_path '$PIG_HOME/bin'
 }
 
 function pig_destroy
@@ -29,7 +29,7 @@ function pig_destroy
 	del_export PIG_HOME
 	del_export PIG_CLASSPATH
 	del_export HADOOP_CONF_DIR
-	del_path "\$PIG_HOME/bin"
+	del_path '$PIG_HOME/bin'
 }
 
 function pig_validate

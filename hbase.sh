@@ -15,15 +15,6 @@ function hbase_deploy
 
 	temp=`mktemp`
 	if [ $mode = 'cluster' ]; then
-		truncate --size 0 conf/regionservers
-		local count
-		for ((count = 1; count < ${#hosts[@]}; count++))
-		do
-			echo ${hosts[$count]} >> conf/regionservers
-		done
-
-		echo ${hosts[1]} > conf/backup-masters
-
 		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
 		cat > $temp << EOF
   <property>
@@ -43,33 +34,56 @@ function hbase_deploy
     <value>$data_root/zookeeper</value>
   </property>
 EOF
-		sed -i "/<configuration>/r $temp" conf/hbase-site.xml	
-
-		for slave in ${slaves[@]}
-		do
-			$TOP/fast-scp $PWD ${slave} || exit 1
-		done
 	else
+		# FIXME: pseudo instead of standalone
 		cat > $temp << EOF
   <property>
-    <name>hbase.rootdir</name> <value>file://$data_root/hbase</value>
+    <name>hbase.rootdir</name>
+	<value>file://$data_root/hbase</value>
   </property>
   <property>
     <name>hbase.zookeeper.property.dataDir</name>
     <value>$data_root/zookeeper</value>
   </property>
 EOF
-		sed -i "/<configuration>/r $temp" conf/hbase-site.xml	
 	fi
+	sed -i "/<configuration>/r $temp" conf/hbase-site.xml
 	rm $temp
+
+	if [ $mode = 'cluster' ]; then
+		truncate --size 0 conf/regionservers
+		local count
+		for ((count = 1; count < ${#hosts[@]}; count++))
+		do
+			echo ${hosts[$count]} >> conf/regionservers
+		done
+
+		echo "region servers:"
+		cat conf/regionservers
+		echo
+
+		echo ${hosts[1]} > conf/backup-masters
+
+		echo "backup masters:"
+		cat conf/backup-masters
+		echo
+
+		for slave in ${slaves[@]}
+		do
+			$TOP/fast-scp $PWD ${slave} || exit 1
+		done
+	fi
+
+	add_export HBASE_HOME
 
 	./bin/start-hbase.sh
 }
 
 function hbase_destroy
 {
-	# FIXME
-	HBASE_HOME=$HOME/$hbase
+	if [ -z "$HBASE_HOME" ]; then
+		return 0
+	fi
 
 	if [ ! -d $HBASE_HOME ]; then
 		echo "$HBASE_HOME does not exist (skipped)"	
@@ -90,21 +104,15 @@ rm -rf $data_root/hbase
 EOF
 	done
 
-	# del_export HBASE_HOME
+	del_export HBASE_HOME
 }
 
 function hbase_validate
 {
-	# FIXME
-	HBASE_HOME=$HOME/$hbase
-
-	if [ ! -d $HBASE_HOME ]; then
+	if [ -z "$HBASE_HOME" -o ! -d "$HBASE_HOME" ]; then
 		echo "not installed"
 		exit 1
-	else
-		echo "$HBASE_HOME"
 	fi
-	echo
 
 	cd $HBASE_HOME || exit 1
 

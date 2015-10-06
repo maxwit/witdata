@@ -20,9 +20,9 @@ function ssh_setup
 
 	for host in ${hosts[@]}
 	do
-		echo "Copying $kf [$count/$total]: $user@$host ..."
+		echo "Copying $kf [$count/$total]: $host ..."
 		# TODO: no-interactive support
-		ssh-copy-id $user@$host
+		ssh-copy-id $host
 
 		((count++))
 		echo
@@ -30,7 +30,7 @@ function ssh_setup
 
 	for host in ${hosts[@]}
 	do
-		ssh $user@$host echo "login $host successfully!"
+		ssh $host echo "login $host successfully!"
 	done
 	echo
 }
@@ -44,11 +44,11 @@ do
 	-i|--init)
 		init=1
 		;;
-	-d|--dir)
+	-d|--destroy)
 		destroy=1
 		;;
 	*)
-		echo "usage: `basename $0 [-d|--dir] [-i|--init]`"
+		echo "usage: `basename $0 [-d|--destroy] [-i|--init]`"
 		exit 1
 	esac
 
@@ -68,16 +68,11 @@ fi
 slaves=($config_slaves)
 hosts=($master $config_slaves)
 
-if [ ${#hosts[@]} -ne 1 ]; then
+if [ ${#hosts[@]} -gt 1 ]; then
 	mode="cluster"
 else
+	# TODO: support standalone
 	mode="pseudo"
-fi
-
-if [ -n "$config_user" ]; then
-	user=$config_user
-else
-	user=$USER
 fi
 
 if [ -n "$config_repo" ]; then
@@ -105,6 +100,11 @@ if [ -n "$config_hive" ]; then
 	apps="$apps hive"
 fi
 
+if [ -n "$config_pig" ]; then
+	pig=$config_pig
+	apps="$apps pig"
+fi
+
 if [ -n "$config_zk" ]; then
 	zk=$config_zk
 	apps="$apps zookeeper"
@@ -113,10 +113,6 @@ fi
 if [ -n "$config_hbase" ]; then
 	hbase=$config_hbase
 	apps="$apps hbase"
-fi
-if [ -n "$config_pig" ]; then
-	pig=$config_pig
-	apps="$apps pig"
 fi
 
 if [ $init -eq 1 ]; then
@@ -135,16 +131,21 @@ else
 	profile="$HOME/.profile"
 fi
 
-function update_export
+function add_export
 {
-	key=$1
-	val=$2
+	local key=$1
+	local val=$2
 
-	grep $key $profile > /dev/null
+	grep -w $key $profile > /dev/null
 	if [ $? -eq 0 ]; then
 		sed -i "s:$key=.*:$key=$val:" $profile
 	else
 		echo "export $key=$val" >> $profile
+	fi
+
+	if [ $? -ne 0 ]; then
+		echo "fail to export $key!"
+		exit 1
 	fi
 
 	eval export $key=$val
@@ -152,32 +153,49 @@ function update_export
 
 function del_export
 {
-	key=$1
+	local key=$1
 
 	sed -i "/export $key/d" $profile
 	unset $key
 }
 
+function check_profile_path
+{
+	local path=$1
+
+	grep "PATH=$path:" $profile > /dev/null || \
+		grep "PATH=.*:$path$" $profile > /dev/null || \
+			grep "PATH=.*:$path:" $profile > /dev/null
+
+	return $?
+}
+
 function add_path
 {
-	path=$1
+	local path=$1
+
+	check_profile_path $path || echo "export PATH=$path:\$PATH" >> $profile
+	check_profile_path $path || exit 1
 
 	# FIXME
-	grep "PATH=.*$path" $profile > /dev/null
-	if [ $? -ne 0 ]; then
-		echo "export PATH=\$PATH:$path" >> $profile
-		eval export PATH=\$PATH:$path
-	fi
+	echo $PATH | grep -w $path || \
+		eval export PATH="$path:\$PATH"
 }
 
 function del_path
 {
-	path=$1
+	local path=$1
+	check_profile_path $path && sed -i "#PATH=.*$path#d" $profile
+
+	local NEW_PATH=`echo $PATH | sed -e 's#$path:##' | sed -e 's#:$path##'`
+	eval export PATH=$NEW_PATH
 }
 
 function extract
 {
-	pkg=$1
+	local pkg=$1
+	local dir
+
 	if [ -n "$2" ]; then
 		dir=$2
 	else
@@ -218,10 +236,21 @@ do
 
 	. ./$app.sh
 
-	if [ $destroy -eq 0 ]; then
+	if [ $destroy -eq 1 ]; then
+		execute ${app}_destroy
+		cd $TOP
+
 		for host in ${hosts[@]}
 		do
-			ssh $user@$host << EOF
+			ssh $host << EOF
+rm -rf $data_root
+EOF
+			echo
+		done
+	else
+		for host in ${hosts[@]}
+		do
+			ssh $host << EOF
 mkdir -p $data_root
 EOF
 			echo
@@ -230,16 +259,6 @@ EOF
 		execute ${app}_deploy
 		cd $TOP
 		execute ${app}_validate
-		cd $TOP
-	else
-		for host in ${hosts[@]}
-		do
-			ssh $user@$host << EOF
-rm -rf $data_root
-EOF
-			echo
-		done
-		execute ${app}_destroy
 		cd $TOP
 	fi
 

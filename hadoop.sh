@@ -18,18 +18,107 @@ function hadoop_deploy
 
 	### configure sites ###
 	cp -v etc/hadoop/mapred-site.xml{.template,}
-	patch -p1 < $TOP/patch/configure-${mode}-sites.patch || exit 1
+	temp=`mktemp -d`
+
+	if [ $mode = "cluster" ]; then
+		cat > $temp/core << EOF
+	<property>
+		<name>fs.defaultFS</name>
+		<value>hdfs://$master:9000</value>
+	</property>
+EOF
+		cat > $temp/hdfs << EOF
+	<property>
+		<name>dfs.replication</name>
+		<value>1</value>
+	</property>
+	<property>
+		<name>dfs.namenode.secondary.http-address</name>
+		<value>$master:9001</value>
+	</property>
+EOF
+		cat > $temp/mapred << EOF
+	<property>
+		<name>mapreduce.framework.name</name>
+		<value>yarn</value>
+	</property>
+	<property>
+		<name>mapreduce.jobhistory.address</name>
+		<value>$master:10020</value>
+	</property>
+	<property>
+		<name>mapreduce.jobhistory.webapp.address</name>
+		<value>$master:19888</value>
+	</property>
+EOF
+		cat > $temp/yarn << EOF
+	<property>
+		<name>yarn.nodemanager.aux-services</name>
+		<value>mapreduce_shuffle</value>
+	</property>
+	<property>
+		<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+		<value>org.apache.hadoop.mapred.ShuffleHandler</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.address</name>
+		<value>$master:8032</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.scheduler.address</name>
+		<value>$master:8030</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.resource-tracker.address</name>
+		<value>$master:8031</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.admin.address</name>
+		<value>$master:8033</value>
+	</property>
+	<property>
+		<name>yarn.resourcemanager.webapp.address</name>
+		<value>$master:8088</value>
+	</property>
+EOF
+	else
+		cat > $temp/core << EOF
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+EOF
+		cat > $temp/hdfs << EOF
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+EOF
+		cat > $temp/mapred << EOF
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+EOF
+		cat > $temp/yarn << EOF
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+EOF
+	fi
+
+	for cfg in core hdfs mapred yarn
+	do
+		sed -i "/<configuration>/r $temp/$cfg" etc/hadoop/$cfg-site.xml || exit 1
+	done
+	rm -rf $temp
 
 	if [ $mode = "cluster" ]; then
 		truncate --size 0 etc/hadoop/slaves
 		for slave in ${slaves[@]}
 		do
 			echo $slave >> etc/hadoop/slaves
-		done
-
-		for cfg in core hdfs mapred yarn
-		do
-			sed -i "s/__MASTER__/$master/g" etc/hadoop/${cfg}-site.xml || exit 1
 		done
 
 		for slave in ${slaves[@]}
@@ -39,9 +128,10 @@ function hadoop_deploy
 		echo
 	fi
 
-	bin/hdfs namenode -format
+	add_export HADOOP_HOME $PWD
+	add_path '$HADOOP_HOME/bin'
 
-	update_export HADOOP_HOME $PWD
+	hdfs namenode -format
 
 	sbin/start-dfs.sh || exit 1
 	echo
@@ -51,9 +141,9 @@ function hadoop_deploy
 
 	# FIXME: right here?
 	# mkdir -p tmp hdfs hdfs/data hdfs/name
-	bin/hadoop fs -ls /
-	bin/hadoop fs -mkdir /tmp
-	bin/hadoop fs -chmod g+w /tmp
+	hadoop fs -ls /
+	hadoop fs -mkdir /tmp
+	hadoop fs -chmod g+w /tmp
 }
 
 function hadoop_destroy
@@ -75,7 +165,7 @@ EOF
 	done
 
 	del_export HADOOP_HOME
-	# echo "'export HADOOP_HOME' removed from $sh_config" $sh_config
+	del_path '$HADOOP_HOME/bin'
 }
 
 function hadoop_validate
@@ -105,6 +195,6 @@ function hadoop_validate
 	echo
 
 	echo "removing $temp ..."
-	#ssh $user@$master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
+	#ssh $master hadoop-2.7.1/bin/hadoop fs -rm /$temp || exit 1
 	echo
 }

@@ -2,9 +2,9 @@ function zookeeper_deploy
 {
 	local count
 
-	if [ "$ZOOKEEPER_HOME" != "" -a -d "$ZOOKEEPER_HOME" ]; then
-		echo -e "zookeeper already installed ($ZOOKEEPER_HOME)!\n"
-		return 0
+	if [ "$ZOOKEEPER_HOME" != "" ]; then
+		echo -e "zookeeper already installed!\n"
+		exit 1
 	fi
 
 	echo -e "configure zookeeper in $mode mode!\n"
@@ -12,6 +12,7 @@ function zookeeper_deploy
 
 	extract $zk
 	cd $HOME/$zk
+	local zk_home=$PWD
 
 	echo
 	cp -v conf/zoo{_sample,}.cfg || exit 1
@@ -41,21 +42,23 @@ mkdir -p $data_dir
 if [ $mode = "cluster" ]; then
 	echo $count > $data_dir/myid
 fi
-cd $zk
+cd $zk_home
 bin/zkServer.sh start
 EOF
 
 		((count++))
-		# update_export ZOOKEEPER_HOME $PWD
 
 		echo
 	done
+
+	add_export ZOOKEEPER_HOME $zk_home
 }
 
 function zookeeper_destroy
 {
-	# FIXME
-	ZOOKEEPER_HOME=$HOME/$zk
+	if [ -z "$ZOOKEEPER_HOME" ]; then
+		return 0
+	fi
 
 	for host in ${hosts[@]}
 	do
@@ -71,21 +74,15 @@ rm -rf $data_root/zookeeper
 EOF
 	done
 
-	# del_export ZOOKEEPER_HOME
+	del_export ZOOKEEPER_HOME
 }
 
 function zookeeper_validate
 {
-	# FIXME
-	ZOOKEEPER_HOME=$HOME/$zk
-
-	if [ ! -d "$ZOOKEEPER_HOME" ]; then
+	if [ -z "$ZOOKEEPER_HOME" -o ! -d "$ZOOKEEPER_HOME" ]; then
 		echo "not installed"
 		exit 1
-	else
-		echo "$ZOOKEEPER_HOME"
 	fi
-	echo
 
 	cd $ZOOKEEPER_HOME || exit 1
 

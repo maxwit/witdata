@@ -12,9 +12,9 @@ function hive_deploy
 
 	extract $hive
 
-	update_export HIVE_HOME "\$HOME/$hive"
-	update_export HIVE_CONF_DIR "\$HIVE_HOME/conf"
-	add_path "\$HIVE_HOME/bin"
+	add_export HIVE_HOME "\$HOME/$hive"
+	add_export HIVE_CONF_DIR '$HIVE_HOME/conf'
+	add_path '$HIVE_HOME/bin'
 }
 
 function hive_destroy
@@ -27,7 +27,7 @@ function hive_destroy
 
 	del_export HIVE_HOME
 	del_export HIVE_CONF_DIR
-	del_path "\$HIVE_HOME/bin"
+	del_path '$HIVE_HOME/bin'
 }
 
 function hive_validate
