@@ -11,20 +11,56 @@ function hbase_deploy
 	extract $hbase-bin
 	cd $HOME/$hbase
 
+	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${JAVA_HOME}:" conf/hbase-env.sh
+
 	temp=`mktemp`
-	cat > $temp << EOF
-<configuration>
+	if [ $mode = 'cluster' ]; then
+		truncate --size 0 conf/regionservers
+		local count
+		for ((count = 1; count < ${#hosts[@]}; count++))
+		do
+			echo ${hosts[$count]} >> conf/regionservers
+		done
+
+		echo ${hosts[1]} > conf/backup-masters
+
+		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
+		cat > $temp << EOF
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
+  </property>
   <property>
     <name>hbase.rootdir</name>
-    <value>file://$data_root/hbase</value>
+    <value>hdfs://localhost:8020/hbase</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>$quorum</value>
   </property>
   <property>
     <name>hbase.zookeeper.property.dataDir</name>
     <value>$data_root/zookeeper</value>
   </property>
-</configuration>
 EOF
-	sed -i "/<configuration>/r $temp" conf/hbase-site.xml	
+		sed -i "/<configuration>/r $temp" conf/hbase-site.xml	
+
+		for slave in ${slaves[@]}
+		do
+			$TOP/fast-scp $PWD ${slave} || exit 1
+		done
+	else
+		cat > $temp << EOF
+  <property>
+    <name>hbase.rootdir</name> <value>file://$data_root/hbase</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>$data_root/zookeeper</value>
+  </property>
+EOF
+		sed -i "/<configuration>/r $temp" conf/hbase-site.xml	
+	fi
 	rm $temp
 
 	./bin/start-hbase.sh
@@ -36,14 +72,23 @@ function hbase_destroy
 	HBASE_HOME=$HOME/$hbase
 
 	if [ ! -d $HBASE_HOME ]; then
-		return 0;
+		echo "$HBASE_HOME does not exist (skipped)"	
+		return 0
 	fi
 
 	cd $HBASE_HOME
+	echo "stoping $hbasei ..."
 	./bin/stop-hbase.sh
 
-	rm -rf $HBASE_HOME || exit 1
-	rm -rf $data_root/hbase
+	for slave in localhost `cat conf/regionservers`
+	do
+		echo "removing $HBASE_HOME @ $slave"
+		ssh $slave << EOF
+[ ! -d "$HBASE_HOME" ] && exit 0
+rm -rf $HBASE_HOME
+rm -rf $data_root/hbase
+EOF
+	done
 
 	# del_export HBASE_HOME
 }
@@ -53,7 +98,7 @@ function hbase_validate
 	# FIXME
 	HBASE_HOME=$HOME/$hbase
 
-	if [ ! -d "$HBASE_HOME" ]; then
+	if [ ! -d $HBASE_HOME ]; then
 		echo "not installed"
 		exit 1
 	else

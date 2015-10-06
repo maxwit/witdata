@@ -64,9 +64,9 @@ function zookeeper_destroy
 zk=`basename $ZOOKEEPER_HOME`
 echo "stoping $zk ..."
 cd $ZOOKEEPER_HOME
-bin/zkServer.sh stop || exit 1
+bin/zkServer.sh stop
 echo "removing $zk ..."
-rm -rf $ZOOKEEPER_HOME || exit 1
+rm -rf $ZOOKEEPER_HOME
 rm -rf $data_root/zookeeper
 EOF
 	done

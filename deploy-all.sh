@@ -92,8 +92,6 @@ if [ -n "$config_data_root" ]; then
 else
 	data_root="$HOME/data"
 fi
-rm -rf $data_root
-mkdir -p $data_root
 
 apps=""
 
@@ -217,11 +215,26 @@ do
 	. ./$app.sh
 
 	if [ $destroy -eq 0 ]; then
+		for host in ${hosts[@]}
+		do
+			ssh $user@$host << EOF
+mkdir -p $data_root
+EOF
+			echo
+		done
+
 		execute ${app}_deploy
 		cd $TOP
 		execute ${app}_validate
 		cd $TOP
 	else
+		for host in ${hosts[@]}
+		do
+			ssh $user@$host << EOF
+rm -rf $data_root
+EOF
+			echo
+		done
 		execute ${app}_destroy
 		cd $TOP
 	fi
