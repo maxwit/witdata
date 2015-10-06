@@ -24,6 +24,7 @@ config_slaves="$slaves"
 config_hadoop="hadoop-2.7.1"
 config_hive="apache-hive-1.2.1-bin"
 config_zk="zookeeper-3.4.6"
+config_pig="pig-0.15.0"
 config_hbase="hbase-1.1.2"
 EOF
 
