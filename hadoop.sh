@@ -129,6 +129,7 @@ EOF
 	fi
 
 	add_export HADOOP_HOME $PWD
+	#add_export HADOOP_CONF_DIR '$HADOOP_HOME/etc/hadoop'
 	add_path '$HADOOP_HOME/bin'
 
 	hdfs namenode -format
@@ -165,6 +166,7 @@ EOF
 	done
 
 	del_export HADOOP_HOME
+	#del_export HADOOP_CONF_DIR
 	del_path '$HADOOP_HOME/bin'
 }
 
