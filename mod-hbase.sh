@@ -5,9 +5,7 @@ function hbase_deploy
 		return 0
 	fi
 
-	echo -e "configure hbase in $mode mode!\n"
-	echo "Cluster nodes: ${hosts[@]}"
-
+	rm -rf $HOME/$hbase
 	extract $hbase-bin
 	cd $HOME/$hbase
 
@@ -32,7 +30,6 @@ EOF
 
 	if [ $mode = 'cluster' ]; then
 		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
-		echo "quorum = $quorum"
 		cat >> $temp << EOF
   <property>
     <name>hbase.zookeeper.quorum</name>
@@ -45,6 +42,9 @@ EOF
 
 	rm $temp
 
+	add_env HBASE_HOME $PWD
+	add_path '$HBASE_HOME/bin'
+
 	if [ $mode = 'cluster' ]; then
 		truncate --size 0 conf/regionservers
 		local count
@@ -53,56 +53,58 @@ EOF
 			echo ${hosts[$count]} >> conf/regionservers
 		done
 
-		echo "region servers:"
-		cat conf/regionservers
-		echo
-
 		echo ${hosts[1]} > conf/backup-masters
 
-		echo "backup masters:"
-		cat conf/backup-masters
-		echo
+		#echo "region servers:"
+		#cat conf/regionservers
+		#echo
+
+		#echo "backup masters:"
+		#cat conf/backup-masters
+		#echo
 
 		for slave in ${slaves[@]}
 		do
-			$TOP/fast-scp $PWD ${slave} || exit 1
+			$TOP/fast-scp $PWD $slave || exit 1
+			scp $profile $slave:$profile
 		done
 	fi
-
-	add_export HBASE_HOME $PWD
-
-	./bin/start-hbase.sh
 }
 
 function hbase_destroy
 {
 	if [ -z "$HBASE_HOME" ]; then
+		echo "hbase not installed!"
 		return 0
 	fi
 
-	if [ ! -d $HBASE_HOME ]; then
-		echo "$HBASE_HOME does not exist (skipped)"	
-		return 0
-	fi
-
-	cd $HBASE_HOME
-	echo "stoping $hbasei ..."
-	./bin/stop-hbase.sh
-
-	for slave in localhost `cat conf/regionservers`
+	for host in ${hosts[@]}
 	do
-		echo "removing $HBASE_HOME @ $slave"
-		ssh $slave << EOF
-[ ! -d "$HBASE_HOME" ] && exit 0
-rm -rf $HBASE_HOME
-rm -rf $data_root/hbase
-EOF
-	done
+		echo "removing $HBASE_HOME @ $host"
 
-	sed -i '/HBASE_HOME/d' $profile
+		if [ $host = $master ]; then
+			prefix=""
+		else
+			prefix="ssh $host "
+		fi
+
+		${prefix}rm -rf $HBASE_HOME
+		#${prefix}rm -rf $data_root/hbase
+		${prefix}sed -i '/HBASE_HOME/d' $profile
+	done
 }
 
-function hbase_validate
+function hbase_start
+{
+	start-hbase.sh
+}
+
+function hbase_stop
+{
+	stop-hbase.sh
+}
+
+function hbase_test
 {
 	if [ -z "$HBASE_HOME" -o ! -d "$HBASE_HOME" ]; then
 		echo "$hbase not installed"

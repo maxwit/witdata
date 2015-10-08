@@ -5,9 +5,7 @@ function hadoop_deploy
 		return 0
 	fi
 
-	echo -e "configure hadoop in $mode mode!\n"
-	echo "Cluster nodes: ${hosts[@]}"
-
+	rm -rf $HOME/$hadoop
 	extract $hadoop
 	cd $HOME/$hadoop
 
@@ -16,8 +14,6 @@ function hadoop_deploy
 	bin/hadoop version || exit 1
 	echo
 
-	### configure sites ###
-	cp -v etc/hadoop/mapred-site.xml{.template,}
 	temp=`mktemp -d`
 
 	if [ $mode = "cluster" ]; then
@@ -116,11 +112,19 @@ EOF
 EOF
 	fi
 
+	cp -v etc/hadoop/mapred-site.xml{.template,}
 	for cfg in core hdfs mapred yarn
 	do
 		sed -i "/<configuration>/r $temp/$cfg" etc/hadoop/$cfg-site.xml || exit 1
 	done
+
 	rm -rf $temp
+
+	bin/hdfs namenode -format || exit 1
+
+	add_env HADOOP_HOME $PWD
+	add_env HADOOP_CONF_DIR '$HADOOP_HOME/etc/hadoop'
+	add_path '$HADOOP_HOME/bin'
 
 	if [ $mode = "cluster" ]; then
 		truncate --size 0 etc/hadoop/slaves
@@ -131,29 +135,11 @@ EOF
 
 		for slave in ${slaves[@]}
 		do
-			$TOP/fast-scp $PWD ${slave} || exit 1
+			$TOP/fast-scp $PWD $slave || exit 1
+			scp $profile $slave:$profile
 		done
 		echo
 	fi
-
-	add_export HADOOP_HOME $PWD
-	#add_export HADOOP_CONF_DIR '$HADOOP_HOME/etc/hadoop'
-	add_path '$HADOOP_HOME/bin'
-
-	hdfs namenode -format
-
-	sbin/start-dfs.sh || exit 1
-	echo
-	sbin/start-yarn.sh || exit 1
-	echo
-	sbin/mr-jobhistory-daemon.sh start historyserver || exit 1
-	echo
-
-	# FIXME: right here?
-	# mkdir -p tmp hdfs hdfs/data hdfs/name
-	hadoop fs -ls /
-	hadoop fs -mkdir /tmp
-	hadoop fs -chmod g+w /tmp
 }
 
 function hadoop_destroy
@@ -163,26 +149,53 @@ function hadoop_destroy
 		return 0
 	fi
 
-	if [ -d $HADOOP_HOME ]; then
+	#if [ -e $HADOOP_HOME/etc/hadoop/slaves ]; then
+	#	local slaves=`cat $HADOOP_HOME/etc/hadoop/slaves`
+	#fi
+
+	for host in ${hosts[@]}
+	do
+		echo "removing $HADOOP_HOME @ $host"
+
+		if [ $host = $master ]; then
+			prefix=""
+		else
+			prefix="ssh $host "
+		fi
+
+		${prefix}rm -rf $HADOOP_HOME
+		${prefix}sed -i '/HADOOP_/d' $profile
+	done
+}
+
+function hadoop_start
+{
+	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
+		$HADOOP_HOME/sbin/start-dfs.sh || exit 1
+		echo
+		$HADOOP_HOME/sbin/start-yarn.sh || exit 1
+		echo
+		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || exit 1
+		echo
+	fi
+
+	## FIXME: right here?
+	## mkdir -p tmp hdfs hdfs/data hdfs/name
+	#hadoop fs -ls /
+	#hadoop fs -mkdir /tmp
+	#hadoop fs -chmod g+w /tmp
+}
+
+function hadoop_stop
+{
+	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
 		$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
 		$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
 		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || exit 1
 	fi
-	echo
-
-	for host in localhost `cat $HADOOP_HOME/etc/hadoop/slaves`
-	do
-		echo "removing $HADOOP_HOME @ $host"
-		ssh $host << EOF
-rm -rf $HADOOP_HOME
-EOF
-	done
-
-	sed -i '/HADOOP_HOME/d' $profile
-	#del_export HADOOP_CONF_DIR
 }
 
-function hadoop_validate
+function hadoop_test
 {
 	# FIXME
 	master=`hostname`

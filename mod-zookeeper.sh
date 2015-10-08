@@ -7,12 +7,9 @@ function zookeeper_deploy
 		exit 1
 	fi
 
-	echo -e "configure zookeeper in $mode mode!\n"
-	echo "Cluster nodes: ${hosts[@]}"
-
+	rm -rf $HOME/$zk
 	extract $zk
 	cd $HOME/$zk
-	local zk_home=$PWD
 
 	echo
 	cp -v conf/zoo{_sample,}.cfg || exit 1
@@ -29,55 +26,68 @@ function zookeeper_deploy
 	sed '/^#/d' conf/zoo.cfg 
 	echo
 
+	add_env ZOOKEEPER_HOME $PWD
+	add_path '$ZOOKEEPER_HOME/bin'
+
 	count=1
+	temp=`mktemp`
+
 	for host in ${hosts[@]}
 	do
 		echo "deploying $zk @ $host ..."
-		if [ $host != $master ]; then
-			$TOP/fast-scp $PWD $host || exit 1
+
+		ssh $host mkdir -p $data_dir
+
+		if [ $mode = "cluster" ]; then
+			echo $count > $temp
+			((count++))
+			scp $temp $host:$data_dir/myid
+
+			if [ $host != $master ]; then
+				$TOP/fast-scp $PWD $host || exit 1
+				scp $profile $host:$profile
+			fi
 		fi
-
-		ssh $host << EOF
-mkdir -p $data_dir
-if [ $mode = "cluster" ]; then
-	echo $count > $data_dir/myid
-fi
-cd $zk_home
-bin/zkServer.sh start
-EOF
-
-		((count++))
 
 		echo
 	done
 
-	add_export ZOOKEEPER_HOME $zk_home
+	rm $temp
 }
 
 function zookeeper_destroy
 {
 	if [ -z "$ZOOKEEPER_HOME" ]; then
+		echo "zookeeper not installed!"
 		return 0
 	fi
 
 	for host in ${hosts[@]}
 	do
-		ssh $host << EOF
-[ ! -d "$ZOOKEEPER_HOME" ] && exit 0
-zk=`basename $ZOOKEEPER_HOME`
-echo "stoping $zk ..."
-cd $ZOOKEEPER_HOME
-bin/zkServer.sh stop
-echo "removing $zk ..."
-rm -rf $ZOOKEEPER_HOME
-rm -rf $data_root/zookeeper
-EOF
-	done
+		echo "removing $zk @ $host ..."
 
-	sed -i '/ZOOKEEPER_HOME/d' $profile
+		if [ $host = $master ]; then
+			prefix=""
+		else
+			prefix="ssh $host "
+		fi
+
+		${prefix}rm -rf $ZOOKEEPER_HOME
+		${prefix}sed -i '/ZOOKEEPER_HOME/d' $profile
+	done
 }
 
-function zookeeper_validate
+function zookeeper_start
+{
+	zkServer.sh start
+}
+
+function zookeeper_stop
+{
+	zkServer.sh stop
+}
+
+function zookeeper_test
 {
 	if [ -z "$ZOOKEEPER_HOME" -o ! -d "$ZOOKEEPER_HOME" ]; then
 		echo "not installed"

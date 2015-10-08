@@ -31,11 +31,22 @@ EOF
 ./fast-scp $PWD $user@$master || exit 1
 
 ssh $user@$master << EOF
-$wd/deploy-all.sh -d || exit 1
+$wd/mdh destroy || exit 1
 EOF
 echo
 
 ssh $user@$master << EOF
-$wd/deploy-all.sh || exit 1
+$wd/mdh deploy || exit 1
 EOF
-exit $?
+[ $? -ne 0 ] && exit $?
+echo
+
+ssh $user@$master << EOF
+$wd/mdh start || exit 1
+EOF
+echo
+
+ssh $user@$master << EOF
+$wd/mdh test || exit 1
+EOF
+echo

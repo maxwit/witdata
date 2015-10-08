@@ -35,25 +35,29 @@ function ssh_setup
 	echo
 }
 
-destroy=0
-init=0
+if [ $# -ne 1 ]; then
+	echo "usage: `basename $0` <init|deploy|destroy|test|start|stop>"
+	exit 1
+fi
 
-while [ $# -gt 0 ]
-do
-	case $1 in
-	-i|--init)
-		init=1
-		;;
-	-d|--destroy)
-		destroy=1
-		;;
-	*)
-		echo "usage: `basename $0 [-d|--destroy] [-i|--init]`"
-		exit 1
-	esac
+cmd=$1
 
-	shift
-done
+#while [ $# -gt 0 ]
+#do
+#	case $1 in
+#	-i|--init)
+#		init=1
+#		;;
+#	-d|--destroy)
+#		destroy=1
+#		;;
+#	*)
+#		echo "usage: `basename $0 [-d|--destroy] [-i|--init]`"
+#		exit 1
+#	esac
+#
+#	shift
+#done
 
 if [ -e ./.config ]; then
 	. ./.config
@@ -74,6 +78,18 @@ fi
 
 slaves=($config_slaves)
 hosts=($master $config_slaves)
+
+echo "MDH will run in $mode mode."
+if [ $mode = 'cluster' ]; then
+	echo "Cluster nodes:"
+	i=0
+	for host in ${hosts[@]}
+	do
+		((i++))
+		echo "[$i] $host"
+	done
+fi
+echo
 
 if [ -n "$config_repo" ]; then
 	repo="$config_repo"
@@ -114,7 +130,7 @@ if [ -n "$config_hbase" ]; then
 	apps="$apps hbase"
 fi
 
-if [ $init -eq 1 ]; then
+if [ $cmd = 'init' ]; then
 	ssh_setup
 	exit $?
 fi
@@ -130,27 +146,28 @@ else
 	profile="$HOME/.profile"
 fi
 
-function add_export
+function add_env
 {
 	local key=$1
 	local val=$2
 
-	grep -w $key $profile > /dev/null
-	if [ $? -eq 0 ]; then
-		sed -i "s:$key=.*:$key=$val:" $profile
-	else
-		echo "export $key=$val" >> $profile
-	fi
+	echo "export $key=$val" >> $profile
+	#grep -w $key $profile > /dev/null
+	#if [ $? -eq 0 ]; then
+	#	sed -i "s:$key=.*:$key=$val:" $profile
+	#else
+	#	echo "export $key=$val" >> $profile
+	#fi
 
-	if [ $? -ne 0 ]; then
-		echo "fail to export $key!"
-		exit 1
-	fi
+	#if [ $? -ne 0 ]; then
+	#	echo "fail to export $key!"
+	#	exit 1
+	#fi
 
-	eval export $key=$val
+	#eval export $key=$val
 }
 
-function del_export
+function del_env
 {
 	local key=$1
 
@@ -173,12 +190,13 @@ function add_path
 {
 	local path=$1
 
-	check_profile_path $path || echo "export PATH=$path:\$PATH" >> $profile
-	check_profile_path $path || exit 1
+	echo "export PATH=$path:\$PATH" >> $profile
+	#check_profile_path $path || echo "export PATH=$path:\$PATH" >> $profile
+	#check_profile_path $path || exit 1
 
-	# FIXME
-	echo $PATH | grep -w $path || \
-		eval export PATH="$path:\$PATH"
+	## FIXME
+	#echo $PATH | grep -w $path || \
+	#	eval export PATH="$path:\$PATH"
 }
 
 function del_path
@@ -228,38 +246,72 @@ function execute
 
 for app in $apps
 do
-	if [ ! -e ./$app.sh ]; then
-		echo "$app.sh does not exists!"
+	mod="./mod-$app.sh"
+	if [ ! -e $mod ]; then
+		echo "$mod does not exists!"
 		exit 1
 	fi
 
-	. ./$app.sh
-
-	if [ $destroy -eq 1 ]; then
-		execute ${app}_destroy
-		cd $TOP
-
-		for host in ${hosts[@]}
-		do
-			ssh $host << EOF
-rm -rf $data_root
-EOF
-			echo
-		done
-	else
-		for host in ${hosts[@]}
-		do
-			ssh $host << EOF
-mkdir -p $data_root
-EOF
-			echo
-		done
-
-		execute ${app}_deploy
-		cd $TOP
-		execute ${app}_validate
-		cd $TOP
-	fi
-
-	echo
+	. $mod 
 done
+
+rev_apps=""
+for app in $apps
+do
+	rev_apps="$app $rev_apps"
+done
+
+case $cmd in
+deploy)
+	for host in ${hosts[@]}
+	do
+		ssh $host mkdir -p $data_root || exit 1
+	done
+	echo
+
+	for app in $apps
+	do
+		cd $TOP
+		execute ${app}_deploy
+	done
+	echo
+	;;
+destroy)	
+	for app in $rev_apps
+	do
+		cd $TOP
+		execute ${app}_destroy
+	done
+
+	for host in ${hosts[@]}
+	do
+		ssh $host rm -rf $data_root
+	done
+	;;
+start)
+	for app in $apps
+	do
+		cd $TOP
+		execute ${app}_start
+	done
+	;;
+stop)
+	for app in $rev_apps
+	do
+		cd $TOP
+		execute ${app}_stop
+	done
+	;;
+test)
+	for app in $apps
+	do
+		cd $TOP
+		execute ${app}_test
+	done
+	;;
+*)
+	echo "BUG!"
+	exit 1
+esac
+
+echo
