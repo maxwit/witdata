@@ -1,4 +1,4 @@
-#!/bin/sh
+./test.sh --user hadoop || exit 1
 
 if [ ! -z "$GIT_BRANCH" ]; then
 	BRANCH=`basename $GIT_BRANCH`
@@ -7,11 +7,10 @@ else
 fi
 
 pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
+
 if [ -n "$pusher" ]; then
-	user=`awk -F ':' -v user="$pusher" '{if ($1 == user) {print $1}}' /etc/passwd`
+	grep "^$pusher:" /etc/passwd && \
+		./test.sh --user hadoop --master $user-node1.maxwit.com \
+			--slaves $user-node2.maxwit.com,$user-node3.maxwit.com
 fi
 
-./test.sh || exit 1
-if [ -n "$user" ]; then
-	./test.sh --master $user-node1.maxwit.com --slaves $pusher-node2.maxwit.com,$pusher-node3.maxwit.com
-fi

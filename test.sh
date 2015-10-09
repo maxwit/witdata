@@ -1,6 +1,6 @@
 #!/bin/sh
 
-user='hadoop'
+user=$USER
 master='localhost'
 slaves=()
 

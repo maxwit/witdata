@@ -51,31 +51,20 @@ echo
 
 cmd=$1
 
-log="/tmp/mdh-`date +%H%M%S`.log"
-
-echo "# MDH Log" > $log
-date >> $log
-echo >> $log
-
 if [ -e ./.config ]; then
 	. ./.config
 fi
 
 master=`hostname`
 
-if [ -n "$config_slaves" ]; then
-	if [ -n "$config_master" ]; then
-		master=$config_master
-	fi
-	# TODO: check master
-	mode="cluster"
-else
-	#master='localhost'
-	mode="pseudo"
-fi
-
 slaves=($config_slaves)
 hosts=($master $config_slaves)
+
+if [ "${#slaves[@]}" -gt 0 ]; then
+	mode="cluster"
+else
+	mode="pseudo"
+fi
 
 echo "${cmd}ing MDH ($mode mode)"
 if [ $mode = 'cluster' ]; then
@@ -262,6 +251,10 @@ function execute
 
 	echo
 }
+
+log="/tmp/mdh-`date +%H%M%S`.log"
+echo "# MDH Log (`date`)" > $log
+echo >> $log
 
 for app in $apps
 do
