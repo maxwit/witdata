@@ -35,6 +35,7 @@ ssh $user@$master << EOF
 echo "host: `hostname`"
 $wd/mdh destroy || exit 1
 EOF
+[ $? -ne 0 ] && exit $?
 
 ssh $user@$master << EOF
 echo "host: `hostname`"
@@ -46,8 +47,10 @@ ssh $user@$master << EOF
 echo "host: `hostname`"
 $wd/mdh start || exit 1
 EOF
+[ $? -ne 0 ] && exit $?
 
 ssh $user@$master << EOF
 echo "host: `hostname`"
 $wd/mdh test || exit 1
 EOF
+exit $?

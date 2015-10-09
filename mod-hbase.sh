@@ -65,7 +65,7 @@ EOF
 
 		for slave in ${slaves[@]}
 		do
-			$TOP/fast-scp $PWD $slave || exit 1
+			$TOP/fast-scp $PWD $slave || return 1
 			scp $profile $slave:$profile
 		done
 	fi
@@ -108,10 +108,10 @@ function hbase_test
 {
 	if [ -z "$HBASE_HOME" -o ! -d "$HBASE_HOME" ]; then
 		echo "$hbase not installed"
-		exit 1
+		return 1
 	fi
 
-	cd $HBASE_HOME || exit 1
+	cd $HBASE_HOME || return 1
 
 	./bin/hbase shell << EOF
 create 'test', 'cf'

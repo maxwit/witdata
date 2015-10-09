@@ -25,7 +25,7 @@ function spark_deploy
 
 		for slave in ${slaves[@]}
 		do
-			$TOP/fast-scp $PWD $slave || exit 1
+			$TOP/fast-scp $PWD $slave || return 1
 			scp $profile $slave:$profile
 		done
 	fi
@@ -61,7 +61,7 @@ function spark_start
 {
 	if [ -n "$SPARK_HOME" -a -d "$SPARK_HOME" ]; then
 		echo "starting all ..."
-		$SPARK_HOME/sbin/start-all.sh || exit 1
+		$SPARK_HOME/sbin/start-all.sh || return 1
 	fi
 }
 
@@ -69,7 +69,7 @@ function spark_stop
 {
 	if [ -n "$SPARK_HOME" -a -d "$SPARK_HOME" ]; then
 		echo "stopping all ..."
-		$SPARK_HOME/sbin/stop-all.sh || exit 1
+		$SPARK_HOME/sbin/stop-all.sh || return 1
 	fi
 }
 
@@ -77,8 +77,8 @@ function spark_test
 {
 	if [ -z "$SPARK_HOME" -o ! -d "$SPARK_HOME" ]; then
 		echo "spark not installed"
-		exit 1
+		return 1
 	fi
 
-	run-example SparkPi 10 || exit 1
+	run-example SparkPi 10 || return 1
 }

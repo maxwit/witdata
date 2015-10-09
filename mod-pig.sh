@@ -2,12 +2,12 @@ function pig_deploy
 {
 	if [ "$PIG_HOME" != "" ]; then
 		echo -e "Pig already installed!\n"
-		exit 1
+		return 1
 	fi
 
 	#if [ "$HADOOP_HOME" == "" ]; then
 	#	echo -e "hadoop not installed!\n"
-	#	exit 1
+	#	return 1
 	#fi
 
 	extract $pig

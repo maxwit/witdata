@@ -2,16 +2,16 @@ function hive_deploy
 {
 	if [ "$HIVE_HOME" != "" ]; then
 		echo -e "Hive already installed!\n"
-		exit 1
+		return 1
 	fi
 
 	#if [ "$HADOOP_HOME" == "" ]; then
 	#	echo -e "hadoop not installed!\n"
-	#	exit 1
+	#	return 1
 	#fi
 
 	extract $hive
-	cd $HOME/$hive || exit 1
+	cd $HOME/$hive || return 1
 
 	add_env HIVE_HOME $PWD
 	add_env HIVE_CONF_DIR '$HIVE_HOME/conf'

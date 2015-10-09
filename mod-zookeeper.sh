@@ -4,7 +4,7 @@ function zookeeper_deploy
 
 	if [ "$ZOOKEEPER_HOME" != "" ]; then
 		echo -e "zookeeper already installed!\n"
-		exit 1
+		return 1
 	fi
 
 	rm -rf $HOME/$zk
@@ -12,7 +12,7 @@ function zookeeper_deploy
 	cd $HOME/$zk
 
 	echo
-	cp -v conf/zoo{_sample,}.cfg || exit 1
+	cp -v conf/zoo{_sample,}.cfg || return 1
 	data_dir=$data_root/zookeeper
 	sed -i "s:^dataDir=.*:dataDir=$data_dir:" conf/zoo.cfg
 	if [ $mode = "cluster" ]; then
@@ -44,7 +44,7 @@ function zookeeper_deploy
 			scp $temp $host:$data_dir/myid
 
 			if [ $host != $master ]; then
-				$TOP/fast-scp $PWD $host || exit 1
+				$TOP/fast-scp $PWD $host || return 1
 				scp $profile $host:$profile
 			fi
 		fi
@@ -83,7 +83,7 @@ function zookeeper_start
 	do
 		ssh $host << EOF
 echo "host: `hostname`"
-zkServer.sh start || exit 1
+zkServer.sh start || return 1
 EOF
 	done
 }
@@ -94,7 +94,7 @@ function zookeeper_stop
 	do
 		ssh $host << EOF
 echo "host: `hostname`"
-zkServer.sh stop || exit 1
+zkServer.sh stop || return 1
 EOF
 	done
 }
@@ -103,7 +103,7 @@ function zookeeper_test
 {
 	if [ -z "$ZOOKEEPER_HOME" -o ! -d "$ZOOKEEPER_HOME" ]; then
 		echo "not installed"
-		exit 1
+		return 1
 	fi
 
 	zkCli.sh -server $master:2181 << EOF

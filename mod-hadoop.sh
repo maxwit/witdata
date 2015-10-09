@@ -11,7 +11,7 @@ function hadoop_deploy
 
 	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
 
-	bin/hadoop version || exit 1
+	bin/hadoop version || return 1
 	echo
 
 	temp=`mktemp -d`
@@ -115,13 +115,13 @@ EOF
 	cp -v etc/hadoop/mapred-site.xml{.template,}
 	for cfg in core hdfs mapred yarn
 	do
-		sed -i "/<configuration>/r $temp/$cfg" etc/hadoop/$cfg-site.xml || exit 1
+		sed -i "/<configuration>/r $temp/$cfg" etc/hadoop/$cfg-site.xml || return 1
 	done
 
 	rm -rf $temp
 
 	echo -n "formatting namenode ... "
-	bin/hdfs namenode -format > $log 2>&1 || exit 1
+	bin/hdfs namenode -format > $log 2>&1 || return 1
 	echo "done"
 
 	add_env HADOOP_HOME $PWD
@@ -137,7 +137,7 @@ EOF
 
 		for slave in ${slaves[@]}
 		do
-			$TOP/fast-scp $PWD $slave || exit 1
+			$TOP/fast-scp $PWD $slave || return 1
 			scp $profile $slave:$profile
 		done
 	fi
@@ -172,11 +172,11 @@ function hadoop_destroy
 function hadoop_start
 {
 	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
-		$HADOOP_HOME/sbin/start-dfs.sh || exit 1
+		$HADOOP_HOME/sbin/start-dfs.sh || return 1
 		echo
-		$HADOOP_HOME/sbin/start-yarn.sh || exit 1
+		$HADOOP_HOME/sbin/start-yarn.sh || return 1
 		echo
-		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || exit 1
+		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || return 1
 		echo
 	fi
 
@@ -190,9 +190,9 @@ function hadoop_start
 function hadoop_stop
 {
 	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
-		$HADOOP_HOME/sbin/stop-dfs.sh || exit 1
-		$HADOOP_HOME/sbin/stop-yarn.sh || exit 1
-		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || exit 1
+		$HADOOP_HOME/sbin/stop-dfs.sh || return 1
+		$HADOOP_HOME/sbin/stop-yarn.sh || return 1
+		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || return 1
 	fi
 }
 
@@ -202,7 +202,7 @@ function hadoop_test
 	master=`hostname`
 	if [ -z "$HADOOP_HOME" ]; then
 		echo "not installed"
-		exit 1
+		return 1
 	else
 		echo "$HADOOP_HOME"
 	fi
@@ -212,17 +212,17 @@ function hadoop_test
 	date > $temp
 
 	echo "putting $temp to master ..."
-	$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || exit 1
+	$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || return 1
 	echo
 
 	for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
 	do
 		echo "checking '$slave' ..."
-		ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || exit 1
+		ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || return 1
 	done
 	echo
 
 	echo "removing $temp ..."
-	$HADOOP_HOME/bin/hadoop fs -rm $temp || exit 1
+	$HADOOP_HOME/bin/hadoop fs -rm $temp || return 1
 	echo
 }
