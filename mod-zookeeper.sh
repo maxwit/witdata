@@ -79,12 +79,22 @@ function zookeeper_destroy
 
 function zookeeper_start
 {
-	zkServer.sh start
+	for host in ${hosts[@]}
+	do
+		ssh $host << EOF
+zkServer.sh start || exit 1
+EOF
+	done
 }
 
 function zookeeper_stop
 {
-	zkServer.sh stop
+	for host in ${hosts[@]}
+	do
+		ssh $host << EOF
+zkServer.sh stop || exit 1
+EOF
+	done
 }
 
 function zookeeper_test
@@ -94,9 +104,7 @@ function zookeeper_test
 		exit 1
 	fi
 
-	cd $ZOOKEEPER_HOME || exit 1
-
-	bin/zkCli.sh -server $master:2181 << EOF
+	zkCli.sh -server $master:2181 << EOF
 create /zk_demo demo1
 ls /
 get /zk_demo

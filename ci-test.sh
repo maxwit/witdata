@@ -26,6 +26,7 @@ config_hive="apache-hive-1.2.1-bin"
 config_pig="pig-0.15.0"
 config_zk="zookeeper-3.4.6"
 config_hbase="hbase-1.1.2"
+config_spark="spark-1.5.1-bin-hadoop2.6"
 EOF
 
 ./fast-scp $PWD $user@$master || exit 1
@@ -33,20 +34,19 @@ EOF
 ssh $user@$master << EOF
 $wd/mdh destroy || exit 1
 EOF
-echo
 
 ssh $user@$master << EOF
 $wd/mdh deploy || exit 1
 EOF
 [ $? -ne 0 ] && exit $?
-echo
 
 ssh $user@$master << EOF
 $wd/mdh start || exit 1
 EOF
-echo
 
 ssh $user@$master << EOF
 $wd/mdh test || exit 1
 EOF
+
+echo "MDH deployed successfully!"
 echo

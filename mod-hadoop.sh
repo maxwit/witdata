@@ -138,7 +138,6 @@ EOF
 			$TOP/fast-scp $PWD $slave || exit 1
 			scp $profile $slave:$profile
 		done
-		echo
 	fi
 }
 

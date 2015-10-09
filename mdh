@@ -130,6 +130,11 @@ if [ -n "$config_hbase" ]; then
 	apps="$apps hbase"
 fi
 
+if [ -n "$config_spark" ]; then
+	spark=$config_spark
+	apps="$apps spark"
+fi
+
 if [ $cmd = 'init' ]; then
 	ssh_setup
 	exit $?
@@ -212,6 +217,8 @@ function extract
 {
 	local pkg=$1
 	local dir
+	local tarball
+	local ext
 
 	if [ -n "$2" ]; then
 		dir=$2
@@ -220,10 +227,22 @@ function extract
 	fi
 
 	echo -n "extracting $pkg ... "
-	tar xf $repo/${pkg}.tar.gz -C $dir || {
-		echo "failed"
-		exit 1
-	}
+
+	for ext in tar.gz tar.bz2 tar.xz tgz
+	do
+		if [ -e $repo/$pkg.$ext ]; then
+			tarball=$repo/$pkg.$ext
+			break
+		fi
+	done
+
+	if [ -z "$tarball" ]; then
+		echo "$pkg not found!"
+		return 1
+	fi
+
+	tar xf $tarball -C $dir || return 1
+
 	echo "done"
 }
 
@@ -273,6 +292,7 @@ deploy)
 	do
 		cd $TOP
 		execute ${app}_deploy
+		echo
 	done
 	echo
 	;;
@@ -281,6 +301,7 @@ destroy)
 	do
 		cd $TOP
 		execute ${app}_destroy
+		echo
 	done
 
 	for host in ${hosts[@]}
@@ -293,6 +314,7 @@ start)
 	do
 		cd $TOP
 		execute ${app}_start
+		echo
 	done
 	;;
 stop)
@@ -300,6 +322,7 @@ stop)
 	do
 		cd $TOP
 		execute ${app}_stop
+		echo
 	done
 	;;
 test)
@@ -307,11 +330,10 @@ test)
 	do
 		cd $TOP
 		execute ${app}_test
+		echo
 	done
 	;;
 *)
 	echo "BUG!"
 	exit 1
 esac
-
-echo
