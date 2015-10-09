@@ -10,7 +10,7 @@ pusher=`echo $BRANCH | awk -F '-' '{print $2}'`
 
 if [ -n "$pusher" ]; then
 	grep "^$pusher:" /etc/passwd && \
-		./test.sh --user hadoop --master $user-node1.maxwit.com \
-			--slaves $user-node2.maxwit.com,$user-node3.maxwit.com
+		./test.sh --user hadoop --master $pusher-node1.maxwit.com \
+			--slaves $pusher-node2.maxwit.com,$pusher-node3.maxwit.com
 fi
 
