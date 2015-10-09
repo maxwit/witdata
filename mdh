@@ -269,13 +269,13 @@ function execute
 
 for app in $apps
 do
-	mod="./mod-$app.sh"
-	if [ ! -e $mod ]; then
-		echo "$mod does not exists!"
+	module="module/$app.sh"
+	if [ ! -e $module ]; then
+		echo "$module does not exists!"
 		exit 1
 	fi
 
-	. $mod 
+	. $module
 done
 
 rev_apps=""
