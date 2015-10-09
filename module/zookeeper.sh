@@ -4,7 +4,7 @@ function zookeeper_deploy
 
 	if [ "$ZOOKEEPER_HOME" != "" ]; then
 		echo -e "zookeeper already installed!\n"
-		return 1
+		return 0
 	fi
 
 	rm -rf $apps_root/$zk

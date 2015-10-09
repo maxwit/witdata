@@ -8,6 +8,7 @@ function hadoop_deploy
 	rm -rf $apps_root/$hadoop
 	extract $hadoop
 	cd $apps_root/$hadoop
+	echo
 
 	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
 
@@ -16,8 +17,7 @@ function hadoop_deploy
 
 	temp=`mktemp -d`
 
-	if [ $mode = "cluster" ]; then
-		cat > $temp/core << EOF
+	cat > $temp/core << EOF
 	<property>
 		<name>fs.defaultFS</name>
 		<value>hdfs://$master:9000</value>
@@ -27,7 +27,8 @@ function hadoop_deploy
 		<value>$data_root/tmp</value>
 	</property>
 EOF
-		cat > $temp/hdfs << EOF
+
+	cat > $temp/hdfs << EOF
 	<property>
 		<name>dfs.replication</name>
 		<value>1</value>
@@ -37,11 +38,23 @@ EOF
 		<value>$master:9001</value>
 	</property>
 EOF
-		cat > $temp/mapred << EOF
-	<property>
-		<name>mapreduce.framework.name</name>
-		<value>yarn</value>
-	</property>
+
+	cat > $temp/mapred << EOF
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+EOF
+
+	cat > $temp/yarn << EOF
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+EOF
+
+	if [ $mode = "cluster" ]; then
+		cat >> $temp/mapred << EOF
 	<property>
 		<name>mapreduce.jobhistory.address</name>
 		<value>$master:10020</value>
@@ -51,11 +64,8 @@ EOF
 		<value>$master:19888</value>
 	</property>
 EOF
-		cat > $temp/yarn << EOF
-	<property>
-		<name>yarn.nodemanager.aux-services</name>
-		<value>mapreduce_shuffle</value>
-	</property>
+
+		cat >> $temp/yarn << EOF
 	<property>
 		<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
 		<value>org.apache.hadoop.mapred.ShuffleHandler</value>
@@ -81,42 +91,9 @@ EOF
 		<value>$master:8088</value>
 	</property>
 EOF
-	else
-		cat > $temp/core << EOF
-    <property>
-        <name>fs.defaultFS</name>
-        <value>hdfs://$master:9000</value>
-    </property>
-	<property>
-		<name>hadoop.tmp.dir</name>
-		<value>$data_root/tmp</value>
-	</property>
-EOF
-		cat > $temp/hdfs << EOF
-    <property>
-        <name>dfs.replication</name>
-        <value>1</value>
-    </property>
-	<property>
-		<name>dfs.namenode.secondary.http-address</name>
-		<value>$master:9001</value>
-	</property>
-EOF
-		cat > $temp/mapred << EOF
-    <property>
-        <name>mapreduce.framework.name</name>
-        <value>yarn</value>
-    </property>
-EOF
-		cat > $temp/yarn << EOF
-    <property>
-        <name>yarn.nodemanager.aux-services</name>
-        <value>mapreduce_shuffle</value>
-    </property>
-EOF
 	fi
 
-	cp -v etc/hadoop/mapred-site.xml{.template,}
+	cp etc/hadoop/mapred-site.xml{.template,}
 	for cfg in core hdfs mapred yarn
 	do
 		sed -i "/<configuration>/r $temp/$cfg" etc/hadoop/$cfg-site.xml || return 1
@@ -160,7 +137,7 @@ function hadoop_destroy
 
 	for host in ${hosts[@]}
 	do
-		echo "removing $HADOOP_HOME @ $host"
+		echo "removing $hadoop @ $host"
 
 		if [ $host = $master ]; then
 			prefix=""

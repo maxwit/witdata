@@ -1,14 +1,9 @@
 function hive_deploy
 {
-	if [ "$HIVE_HOME" != "" ]; then
+	if [ -n "$HIVE_HOME" ]; then
 		echo -e "Hive already installed!\n"
-		return 1
+		return 0
 	fi
-
-	#if [ "$HADOOP_HOME" == "" ]; then
-	#	echo -e "hadoop not installed!\n"
-	#	return 1
-	#fi
 
 	extract $hive
 	cd $apps_root/$hive || return 1
@@ -33,7 +28,7 @@ function hive_destroy
 
 	for host in ${hosts[@]}
 	do
-		echo "removing $HIVE_HOME @ $host"
+		echo "removing $hive @ $host"
 
 		if [ $host = $master ]; then
 			prefix=""

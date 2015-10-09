@@ -2,7 +2,7 @@ function pig_deploy
 {
 	if [ "$PIG_HOME" != "" ]; then
 		echo -e "Pig already installed!\n"
-		return 1
+		return 0
 	fi
 
 	#if [ "$HADOOP_HOME" == "" ]; then
@@ -32,7 +32,7 @@ function pig_destroy
 
 	for host in ${hosts[@]}
 	do
-		echo "removing $PIG_HOME @ $host"
+		echo "removing $pig @ $host"
 
 		if [ $host = $master ]; then
 			prefix=""

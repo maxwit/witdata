@@ -98,14 +98,12 @@ fi
 if [ -n "$config_apps_root" ]; then
 	apps_root="$config_apps_root"
 else
-	apps_root="$HOME/apps"
+	apps_root="$HOME"
 fi
 
-if [ -n "$config_data_root" ]; then
-	data_root="$config_data_root"
-else
-	data_root="$apps_root/data"
-fi
+apps_root="$apps_root/mdh-${version}"
+
+data_root="$apps_root/data"
 
 apps=""
 
@@ -284,9 +282,12 @@ done
 
 case $cmd in
 deploy)
+	echo "MDH will be installed to '$apps_root'"
+
 	for host in ${hosts[@]}
 	do
-		ssh $host mkdir -p $data_root $apps_root || exit 1
+		ssh $host rm -rf $apps_root $data_root || exit 1
+		ssh $host mkdir -p $apps_root $data_root || exit 1
 	done
 	echo
 
@@ -308,6 +309,7 @@ destroy)
 
 	for host in ${hosts[@]}
 	do
+		echo "removing '$data_root' '$apps_root' ..." || exit 1
 		ssh $host rm -rf $data_root $apps_root || exit 1
 	done
 	;;

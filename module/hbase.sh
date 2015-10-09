@@ -80,7 +80,7 @@ function hbase_destroy
 
 	for host in ${hosts[@]}
 	do
-		echo "removing $HBASE_HOME @ $host"
+		echo "removing $hbase @ $host"
 
 		if [ $host = $master ]; then
 			prefix=""

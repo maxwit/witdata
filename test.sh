@@ -1,6 +1,6 @@
 #!/bin/sh
 
-user=$USER
+user='hadoop'
 master='localhost'
 slaves=()
 
@@ -38,11 +38,12 @@ fi
 wd=`basename $PWD`
 
 ./fast-scp $PWD $user@$master || exit 1
+echo
 
 for cmd in deploy start test stop destroy
 do
 	ssh $user@$master << EOF
-echo "host: `hostname`"
+echo "Host: `hostname`"
 $wd/mdh $cmd || exit 1
 EOF
 	[ $? -ne 0 ] && exit 1

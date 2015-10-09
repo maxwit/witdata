@@ -44,7 +44,7 @@ function spark_destroy
 
 	for host in ${hosts[@]}
 	do
-		echo "removing $SPARK_HOME @ $host"
+		echo "removing $spark @ $host"
 
 		if [ $host = $master ]; then
 			prefix=""
