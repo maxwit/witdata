@@ -7,9 +7,9 @@ function zookeeper_deploy
 		return 1
 	fi
 
-	rm -rf $HOME/$zk
+	rm -rf $apps_root/$zk
 	extract $zk
-	cd $HOME/$zk
+	cd $apps_root/$zk
 
 	echo
 	cp -v conf/zoo{_sample,}.cfg || return 1

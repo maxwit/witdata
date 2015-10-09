@@ -11,7 +11,7 @@ function hive_deploy
 	#fi
 
 	extract $hive
-	cd $HOME/$hive || return 1
+	cd $apps_root/$hive || return 1
 
 	add_env HIVE_HOME $PWD
 	add_env HIVE_CONF_DIR '$HIVE_HOME/conf'

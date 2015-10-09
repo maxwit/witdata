@@ -5,9 +5,9 @@ function hadoop_deploy
 		return 0
 	fi
 
-	rm -rf $HOME/$hadoop
+	rm -rf $apps_root/$hadoop
 	extract $hadoop
-	cd $HOME/$hadoop
+	cd $apps_root/$hadoop
 
 	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
 
@@ -85,7 +85,7 @@ EOF
 		cat > $temp/core << EOF
     <property>
         <name>fs.defaultFS</name>
-        <value>hdfs://localhost:9000</value>
+        <value>hdfs://$master:9000</value>
     </property>
 	<property>
 		<name>hadoop.tmp.dir</name>
@@ -97,6 +97,10 @@ EOF
         <name>dfs.replication</name>
         <value>1</value>
     </property>
+	<property>
+		<name>dfs.namenode.secondary.http-address</name>
+		<value>$master:9001</value>
+	</property>
 EOF
 		cat > $temp/mapred << EOF
     <property>
@@ -180,11 +184,11 @@ function hadoop_start
 		echo
 	fi
 
-	## FIXME: right here?
-	## mkdir -p tmp hdfs hdfs/data hdfs/name
-	#hadoop fs -ls /
-	#hadoop fs -mkdir /tmp
-	#hadoop fs -chmod g+w /tmp
+	# FIXME: right here?
+	hadoop fs -ls / || return 1
+	hadoop fs -mkdir -p /tmp /user || return 1
+	hadoop fs -chmod g+w /tmp /user || return 1
+	hadoop fs -ls / || return 1
 }
 
 function hadoop_stop

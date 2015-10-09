@@ -1,8 +1,0 @@
-config_master="conke-node1.maxwit.com"
-config_slaves="conke-node2.maxwit.com conke-node3.maxwit.com"
-
-config_hadoop="hadoop-2.5.2"
-config_hive="apache-hive-1.2.1-bin"
-config_pig="pig-0.15.0"
-config_zk="zookeeper-3.4.6"
-config_hbase="hbase-1.1.2"

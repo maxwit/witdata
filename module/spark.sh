@@ -5,9 +5,9 @@ function spark_deploy
 		return 0
 	fi
 
-	rm -rf $HOME/$spark
+	rm -rf $apps_root/$spark
 	extract $spark
-	cd $HOME/$spark
+	cd $apps_root/$spark
 
 	cp conf/spark-env.sh{.template,}
 	echo >> conf/spark-env.sh

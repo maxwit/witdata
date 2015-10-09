@@ -5,9 +5,9 @@ function hbase_deploy
 		return 0
 	fi
 
-	rm -rf $HOME/$hbase
+	rm -rf $apps_root/$hbase
 	extract $hbase-bin
-	cd $HOME/$hbase
+	cd $apps_root/$hbase
 
 	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${JAVA_HOME}:" conf/hbase-env.sh
 

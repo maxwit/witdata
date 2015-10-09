@@ -11,7 +11,7 @@ function pig_deploy
 	#fi
 
 	extract $pig
-	cd $HOME/$pig
+	cd $apps_root/$pig
 
 	add_env PIG_HOME $PWD
 	add_path '$PIG_HOME/bin'

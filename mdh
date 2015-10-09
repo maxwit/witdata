@@ -3,11 +3,8 @@
 cd `dirname $0`
 TOP=$PWD
 
-log="/tmp/mdh.log"
-
-echo "# MDH Log" > $log
-date >> $log
-echo >> $log
+# FIXME
+version=1.0.0
 
 function ssh_setup
 {
@@ -46,46 +43,41 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
+echo "###########################################"
+echo "                 MDH v$version"
+echo "    MaxWit Distribution of Apache Hadoop"
+echo "###########################################"
+echo
+
 cmd=$1
 
-#while [ $# -gt 0 ]
-#do
-#	case $1 in
-#	-i|--init)
-#		init=1
-#		;;
-#	-d|--destroy)
-#		destroy=1
-#		;;
-#	*)
-#		echo "usage: `basename $0 [-d|--destroy] [-i|--init]`"
-#		exit 1
-#	esac
-#
-#	shift
-#done
+log="/tmp/mdh-`date +%H%M%S`.log"
+
+echo "# MDH Log" > $log
+date >> $log
+echo >> $log
 
 if [ -e ./.config ]; then
 	. ./.config
 fi
 
+master=`hostname`
+
 if [ -n "$config_slaves" ]; then
 	if [ -n "$config_master" ]; then
 		master=$config_master
-	else
-		master=`hostname`
-		# TODO: check master
 	fi
+	# TODO: check master
 	mode="cluster"
 else
-	master='localhost'
+	#master='localhost'
 	mode="pseudo"
 fi
 
 slaves=($config_slaves)
 hosts=($master $config_slaves)
 
-echo "MDH will run in $mode mode."
+echo "${cmd}ing MDH ($mode mode)"
 if [ $mode = 'cluster' ]; then
 	echo "Cluster nodes:"
 	i=0
@@ -103,10 +95,16 @@ else
 	repo='/mnt/witpub/cloud/hadoop/'
 fi
 
+if [ -n "$config_apps_root" ]; then
+	apps_root="$config_apps_root"
+else
+	apps_root="$HOME/apps"
+fi
+
 if [ -n "$config_data_root" ]; then
 	data_root="$config_data_root"
 else
-	data_root="$HOME/data"
+	data_root="$apps_root/data"
 fi
 
 apps=""
@@ -229,7 +227,7 @@ function extract
 	if [ -n "$2" ]; then
 		dir=$2
 	else
-		dir=$HOME
+		dir=$apps_root
 	fi
 
 	for ext in tar.gz tar.bz2 tar.xz tgz
@@ -254,9 +252,9 @@ function execute
 {
 	func=$1
 
-	echo "#########################################"
+	echo "*****************************************"
 	echo "  executing $func() ..."
-	echo "#########################################"
+	echo "*****************************************"
 
 	$func
 	if [ $? -ne 0 ]; then
@@ -288,14 +286,14 @@ case $cmd in
 deploy)
 	for host in ${hosts[@]}
 	do
-		ssh $host mkdir -p $data_root || exit 1
+		ssh $host mkdir -p $data_root $apps_root || exit 1
 	done
 	echo
 
 	for app in $apps
 	do
 		cd $TOP
-		execute ${app}_deploy
+		execute ${app}_deploy || exit 1
 		echo
 	done
 	echo
@@ -304,20 +302,20 @@ destroy)
 	for app in $rev_apps
 	do
 		cd $TOP
-		execute ${app}_destroy
+		execute ${app}_destroy || exit 1
 		echo
 	done
 
 	for host in ${hosts[@]}
 	do
-		ssh $host rm -rf $data_root
+		ssh $host rm -rf $data_root $apps_root || exit 1
 	done
 	;;
 start)
 	for app in $apps
 	do
 		cd $TOP
-		execute ${app}_start
+		execute ${app}_start || exit 1
 		echo
 	done
 	;;
@@ -325,7 +323,7 @@ stop)
 	for app in $rev_apps
 	do
 		cd $TOP
-		execute ${app}_stop
+		execute ${app}_stop || exit 1
 		echo
 	done
 	;;
@@ -333,7 +331,7 @@ test)
 	for app in $apps
 	do
 		cd $TOP
-		execute ${app}_test
+		execute ${app}_test || exit 1
 		echo
 	done
 	;;
@@ -342,5 +340,5 @@ test)
 	exit 1
 esac
 
-echo "MDH deployed successfully!"
+echo "MDH $cmd successfully!"
 echo
