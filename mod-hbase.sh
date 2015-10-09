@@ -96,12 +96,12 @@ function hbase_destroy
 
 function hbase_start
 {
-	start-hbase.sh
+	which start-hbase.sh > /dev/null 2>&1 && start-hbase.sh
 }
 
 function hbase_stop
 {
-	stop-hbase.sh
+	which stop-hbase.sh > /dev/null 2>&1 && stop-hbase.sh
 }
 
 function hbase_test

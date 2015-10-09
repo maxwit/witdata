@@ -82,6 +82,7 @@ function zookeeper_start
 	for host in ${hosts[@]}
 	do
 		ssh $host << EOF
+echo "host: `hostname`"
 zkServer.sh start || exit 1
 EOF
 	done
@@ -92,6 +93,7 @@ function zookeeper_stop
 	for host in ${hosts[@]}
 	do
 		ssh $host << EOF
+echo "host: `hostname`"
 zkServer.sh stop || exit 1
 EOF
 	done

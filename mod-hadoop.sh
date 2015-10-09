@@ -120,7 +120,9 @@ EOF
 
 	rm -rf $temp
 
-	bin/hdfs namenode -format || exit 1
+	echo -n "formatting namenode ... "
+	bin/hdfs namenode -format > $log 2>&1 || exit 1
+	echo "done"
 
 	add_env HADOOP_HOME $PWD
 	add_env HADOOP_CONF_DIR '$HADOOP_HOME/etc/hadoop'

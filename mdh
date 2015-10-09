@@ -3,6 +3,12 @@
 cd `dirname $0`
 TOP=$PWD
 
+log="/tmp/mdh.log"
+
+echo "# MDH Log" > $log
+date >> $log
+echo >> $log
+
 function ssh_setup
 {
 	kt="rsa"
@@ -226,8 +232,6 @@ function extract
 		dir=$HOME
 	fi
 
-	echo -n "extracting $pkg ... "
-
 	for ext in tar.gz tar.bz2 tar.xz tgz
 	do
 		if [ -e $repo/$pkg.$ext ]; then
@@ -241,8 +245,8 @@ function extract
 		return 1
 	fi
 
+	echo -n "extracting $pkg.$ext ... "
 	tar xf $tarball -C $dir || return 1
-
 	echo "done"
 }
 
@@ -337,3 +341,6 @@ test)
 	echo "BUG!"
 	exit 1
 esac
+
+echo "MDH deployed successfully!"
+echo

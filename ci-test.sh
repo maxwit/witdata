@@ -32,21 +32,22 @@ EOF
 ./fast-scp $PWD $user@$master || exit 1
 
 ssh $user@$master << EOF
+echo "host: `hostname`"
 $wd/mdh destroy || exit 1
 EOF
 
 ssh $user@$master << EOF
+echo "host: `hostname`"
 $wd/mdh deploy || exit 1
 EOF
 [ $? -ne 0 ] && exit $?
 
 ssh $user@$master << EOF
+echo "host: `hostname`"
 $wd/mdh start || exit 1
 EOF
 
 ssh $user@$master << EOF
+echo "host: `hostname`"
 $wd/mdh test || exit 1
 EOF
-
-echo "MDH deployed successfully!"
-echo
