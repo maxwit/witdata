@@ -1,0 +1,18 @@
+#!/bin/sh
+
+HADOOP_HOME=/opt/mdh/hadoop
+
+cmd=$1
+
+case $cmd in
+start)
+	$HADOOP_HOME/sbin/start-dfs.sh || return 1
+	$HADOOP_HOME/sbin/start-yarn.sh || return 1
+	$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || return 1
+	;;
+stop)
+	$HADOOP_HOME/sbin/stop-dfs.sh || return 1
+	$HADOOP_HOME/sbin/stop-yarn.sh || return 1
+	$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || return 1
+	;;
+esac

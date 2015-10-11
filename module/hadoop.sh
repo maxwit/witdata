@@ -1,21 +1,10 @@
 function hadoop_deploy
 {
-	if [ -n "$HADOOP_HOME" ]; then
-		echo -e "hadoop already installed ($HADOOP_HOME)!\n"
-		return 0
-	fi
-
-	rm -rf $apps_root/$hadoop
-	extract $hadoop
-	cd $apps_root/$hadoop
-	echo
-
 	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
 
 	bin/hadoop version || return 1
-	echo
 
-	temp=`mktemp -d`
+	local temp=`mktemp -d`
 
 	cat > $temp/core << EOF
 	<property>
@@ -102,7 +91,7 @@ EOF
 	rm -rf $temp
 
 	echo -n "formatting namenode ... "
-	bin/hdfs namenode -format > $log 2>&1 || return 1
+	sudo -u $hadoop_user bin/hdfs namenode -format > $log 2>&1 || return 1
 	echo "done"
 
 	add_env HADOOP_HOME $PWD
@@ -115,95 +104,17 @@ EOF
 		do
 			echo $slave >> etc/hadoop/slaves
 		done
-
-		for slave in ${slaves[@]}
-		do
-			$TOP/fast-scp $PWD $slave || return 1
-			scp $profile $slave:$profile
-		done
 	fi
+}
+
+function hadoop_init()
+{
+	sudo -i $hadoop_user hadoop fs -mkdir -p /tmp /user || return 1
+	sudo -i $hadoop_user hadoop fs -chmod g+w /tmp /user || return 1
+	sudo -i $hadoop_user hadoop fs -ls / || return 1
 }
 
 function hadoop_destroy
 {
-	if [ -z "$HADOOP_HOME" ]; then
-		echo "hadoop not installed!"
-		return 0
-	fi
-
-	#if [ -e $HADOOP_HOME/etc/hadoop/slaves ]; then
-	#	local slaves=`cat $HADOOP_HOME/etc/hadoop/slaves`
-	#fi
-
-	for host in ${hosts[@]}
-	do
-		echo "removing $hadoop @ $host"
-
-		if [ $host = $master ]; then
-			prefix=""
-		else
-			prefix="ssh $host "
-		fi
-
-		${prefix}rm -rf $HADOOP_HOME
-		${prefix}sed -i '/HADOOP_/d' $profile
-	done
-}
-
-function hadoop_start
-{
-	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
-		$HADOOP_HOME/sbin/start-dfs.sh || return 1
-		echo
-		$HADOOP_HOME/sbin/start-yarn.sh || return 1
-		echo
-		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || return 1
-		echo
-	fi
-
-	# FIXME: right here?
-	hadoop fs -ls / || return 1
-	hadoop fs -mkdir -p /tmp /user || return 1
-	hadoop fs -chmod g+w /tmp /user || return 1
-	hadoop fs -ls / || return 1
-}
-
-function hadoop_stop
-{
-	if [ -n "$HADOOP_HOME" -a -d "$HADOOP_HOME" ]; then
-		$HADOOP_HOME/sbin/stop-dfs.sh || return 1
-		$HADOOP_HOME/sbin/stop-yarn.sh || return 1
-		$HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || return 1
-	fi
-}
-
-function hadoop_test
-{
-	# FIXME
-	master=`hostname`
-	if [ -z "$HADOOP_HOME" ]; then
-		echo "not installed"
-		return 1
-	else
-		echo "$HADOOP_HOME"
-	fi
-	echo
-
-	temp=`mktemp`
-	date > $temp
-
-	echo "putting $temp to master ..."
-	$HADOOP_HOME/bin/hadoop fs -put $temp /tmp/ || return 1
-	echo
-
-	for slave in `cat $HADOOP_HOME/etc/hadoop/slaves`
-	do
-		echo "checking '$slave' ..."
-		ssh $slave $HADOOP_HOME/bin/hadoop fs -ls $temp || return 1
-	done
-	echo
-
-	echo "removing $temp ..."
-	$HADOOP_HOME/bin/hadoop fs -rm $temp || return 1
-	echo
+	sed -i '/HADOOP_/d' $profile
 }

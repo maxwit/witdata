@@ -1,14 +1,5 @@
 function hbase_deploy
 {
-	if [ "$HBASE_HOME" != "" -a -d "$HBASE_HOME" ]; then
-		echo -e "hbase already installed ($HBASE_HOME)!\n"
-		return 0
-	fi
-
-	rm -rf $apps_root/$hbase
-	extract $hbase-bin
-	cd $apps_root/$hbase
-
 	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${JAVA_HOME}:" conf/hbase-env.sh
 
 	temp=`mktemp`
@@ -62,68 +53,10 @@ EOF
 		#echo "backup masters:"
 		#cat conf/backup-masters
 		#echo
-
-		for slave in ${slaves[@]}
-		do
-			$TOP/fast-scp $PWD $slave || return 1
-			scp $profile $slave:$profile
-		done
 	fi
 }
 
 function hbase_destroy
 {
-	if [ -z "$HBASE_HOME" ]; then
-		echo "hbase not installed!"
-		return 0
-	fi
-
-	for host in ${hosts[@]}
-	do
-		echo "removing $hbase @ $host"
-
-		if [ $host = $master ]; then
-			prefix=""
-		else
-			prefix="ssh $host "
-		fi
-
-		${prefix}rm -rf $HBASE_HOME
-		#${prefix}rm -rf $data_root/hbase
-		${prefix}sed -i '/HBASE_HOME/d' $profile
-	done
-}
-
-function hbase_start
-{
-	which start-hbase.sh > /dev/null 2>&1 && start-hbase.sh
-}
-
-function hbase_stop
-{
-	which stop-hbase.sh > /dev/null 2>&1 && stop-hbase.sh
-}
-
-function hbase_test
-{
-	if [ -z "$HBASE_HOME" -o ! -d "$HBASE_HOME" ]; then
-		echo "$hbase not installed"
-		return 1
-	fi
-
-	cd $HBASE_HOME || return 1
-
-	./bin/hbase shell << EOF
-create 'test', 'cf'
-list 'test'
-put 'test', 'row1', 'cf:a', 'value1'
-put 'test', 'row2', 'cf:b', 'value2'
-put 'test', 'row3', 'cf:c', 'value3'
-scan 'test'
-get 'test', 'row1'
-disable 'test'
-enable 'test'
-disable 'test'
-drop 'test'
-EOF
+	sed -i '/HBASE_HOME/d' $profile
 }

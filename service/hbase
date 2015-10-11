@@ -1,0 +1,7 @@
+#!/bin/sh
+
+HBASE_HOME=/opt/mdh/hbase
+
+cmd=$1
+
+$HBASE_HOME/$cmd-hbase.sh
