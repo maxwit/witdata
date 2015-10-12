@@ -13,6 +13,7 @@ hadoop_repo="/mnt/witpub/cloud/apache"
 
 cd `dirname $0`
 top=$PWD
+
 tmp_dir=`mktemp -d`
 
 hadoop_user=hadoop
@@ -64,8 +65,6 @@ echo "    MaxWit Distribution of Apache Hadoop"
 echo "###########################################"
 echo
 
-cmd=$1
-
 if [ -e ./.config ]; then
 	. ./.config
 fi
@@ -77,18 +76,21 @@ pig_url=$hadoop_repo/pig-${pig_version}tar.gz
 spark_url=$hadoop_repo/spark-${spark_version}-bin-hadoop2.6.tgz
 zookeeper_url=$hadoop_repo/zookeeper-${zookeeper_version}tar.gz
 
-master=`hostname`
-
 slaves=($config_slaves)
-hosts=($master $config_slaves)
 
 if [ "${#slaves[@]}" -gt 0 ]; then
 	mode="cluster"
+	master=$config_master
+	my_name=$1
 else
 	mode="pseudo"
+	master="localhost"
+	my_name=`hostname`
 fi
 
-echo "${cmd}ing MDH ($mode mode)"
+hosts=($master $config_slaves)
+
+echo "Deploying MDH ($mode mode)"
 if [ $mode = 'cluster' ]; then
 	echo "Cluster nodes:"
 	i=0
@@ -112,10 +114,14 @@ fi
 
 if [ -e /etc/redhat-release ]; then
 	profile="/etc/bash_profile.d"
+	installer=yum
 else
 	profile="/etc/profile.d"
+	installer=apt-get
 fi
 profile="$profile/hadoop.sh"
+
+$installer install -y rsync openssh-server || exit 1
 
 add_env()
 {
@@ -241,21 +247,27 @@ do
 	. $module
 done
 
-case $cmd in
-deploy)
-	echo "MDH will be installed to '$mdh_root'"
+echo "MDH will be installed to '$mdh_root'"
 
-	grep "^$hadoop_user:" /etc/passwd && \
-	{
-		echo "user '$hadoop_user' already exists!"
-		exit 1
-	}
-	useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
+grep "^$hadoop_user:" /etc/passwd && \
+{
+	echo "user '$hadoop_user' already exists!"
+	exit 1
+}
+useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
 
-	sudo -u $hadoop_user mkdir -p $data_root || exit 1
-	mkdir -p $mdh_root || exit 1
-	# chown $hadoop_user.$hadoop_user $mdh_root || exit 1
+sudo -i -u $hadoop_user mkdir .ssh
+sudo -i -u $hadoop_user chmod 700 .ssh
+sudo -i -u $hadoop_user ssh-keygen -P '' -f .ssh/id_rsa -C $my_name
 
+sudo -u $hadoop_user mkdir -p $data_root || exit 1
+mkdir -p $mdh_root || exit 1
+# chown $hadoop_user.$hadoop_user $mdh_root || exit 1
+
+cmd=`basename $0`
+cmd=${cmd%-one}
+
+if [ $cmd = deploy]; then
 	for app in $apps
 	do
 		extract $app
@@ -266,18 +278,15 @@ deploy)
 			$top/service/$app > /etc/init.d/$app
 		chmod a+x /etc/init.d/$app
 
+		/etc/init.d/$app start
+
 		if [ $app = hadoop ]; then
 			hadoop_init
 		fi
 
 		echo
 	done
-
-	cp -r $top/test $mdh_root
-
-	echo
-	;;
-destroy)
+else
 	grep "^$hadoop_user:" /etc/passwd || \
 	{
 		echo "hadoop not installed!"
@@ -286,42 +295,20 @@ destroy)
 
 	for app in $rev_apps
 	do
+		/etc/init.d/$app stop
+		rm -f /etc/init.d/$app
+
 		cd $top
 		execute ${app}_destroy || exit 1
+
 		rm -rf $mdh_root/$app
-		rm -f /etc/init.d/$app
 		echo
 	done
 
 	rm -rf $mdh_root || exit 1
 	sudo -u $hadoop_user rm -rf $data_root
 	userdel -r $hadoop_user
-	;;
-start)
-	for app in $apps
-	do
-		/etc/init.d/$app start || exit 1
-	done
-	;;
-stop)
-	for app in $rev_apps
-	do
-		/etc/init.d/$app stop || exit 1
-		echo
-	done
-	;;
-test)
-	for app in $apps
-	do
-		cd $top
-		execute ${app}_test || exit 1
-		echo
-	done
-	;;
-*)
-	echo "BUG!"
-	exit 1
-esac
+fi
 
-echo "MDH $cmd successfully!"
+echo "MDH ${cmd}ed successfully!"
 echo

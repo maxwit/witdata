@@ -31,7 +31,7 @@ EOF
 
 	sed -i "/<configuration>/r $temp" conf/hbase-site.xml
 
-	rm $temp
+	rm -f $temp
 
 	add_env HBASE_HOME $PWD
 	add_path '$HBASE_HOME/bin'
@@ -45,15 +45,15 @@ EOF
 		done
 
 		echo ${hosts[1]} > conf/backup-masters
-
-		#echo "region servers:"
-		#cat conf/regionservers
-		#echo
-
-		#echo "backup masters:"
-		#cat conf/backup-masters
-		#echo
 	fi
+
+	echo "region servers:"
+	cat conf/regionservers
+	echo
+
+	echo "backup masters:"
+	cat conf/backup-masters
+	echo
 }
 
 function hbase_destroy

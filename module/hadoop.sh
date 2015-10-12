@@ -107,7 +107,7 @@ EOF
 	fi
 }
 
-function hadoop_init()
+function hadoop_init
 {
 	sudo -i $hadoop_user hadoop fs -mkdir -p /tmp /user || return 1
 	sudo -i $hadoop_user hadoop fs -chmod g+w /tmp /user || return 1
