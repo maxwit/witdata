@@ -1,7 +1,3 @@
-#!/bin/sh
-
-SPARK_HOME=/opt/mdh/spark
-
 cmd=$1
 
 $SPARK_HOME/bin/zkServer.sh $cmd
