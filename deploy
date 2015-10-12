@@ -1,16 +1,48 @@
 #!/bin/sh
 
-echo "Deploying MDH ($mode mode)"
-if [ $mode = 'cluster' ]; then
-	echo "Cluster nodes:"
-	i=0
-	for host in ${hosts[@]}
-	do
-		((i++))
-		echo "[$i] $host"
-	done
+user=$USER
+master='localhost'
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-u|--user)
+		user=$2
+		shift
+		;;
+	-m|--master)
+		master=$2
+		shift
+		;;
+	-s|--slaves)
+		slaves=$2
+		shift
+		;;
+	*)
+		echo "usage: `basename $0 [-m|--master <host name>] [-s|--slaves <slave list>]`"
+		exit 1
+	esac
+
+	shift
+done
+
+cp -v configs/config-hadoop-2.7 .config || exit 1
+
+if [ -n "$slaves" ]; then
+	cat >> .config << EOF
+config_master=$master
+config_slaves=$slaves
+EOF
 fi
-echo
+
+echo "Deploying MDH ($mode mode)"
+echo "Cluster nodes:"
+i=0
+for host in ${hosts[@]}
+do
+	((i++))
+	echo "[$i] $host"
+done
 
 for host in ${hosts[@]}
 do
@@ -18,23 +50,28 @@ do
 done
 
 temp=`mktemp -d`
+# copy mdh
 cp -r $PWD $temp
-mkdir $temp/ssh
-ssh-keygen -P '' -f $temp/ssh/id_rsa.pub
+wd=$temp/`basename $PWD`
+# ssh key
+pk=$temp/ssh/id_rsa.pub
+mkdir `dirname $pk`
+ssh-keygen -P '' -f $pk
 
-for ((i=0; i<${#hosts[@]};i++))
+total=${#hosts[@]}
+for ((i=0; i<$total;i++))
 do
-	echo "$i: ${hosts[$i]}"
-	scp -q -r $temp $host:/tmp/
-	ssh $host sudo $temp/deploy-one --key $temp/ssh --id $i
+	host=${hosts[$i]}
+	echo "[$((i+1))/$total] $host"
+	scp -q -r $temp $user@$host:/tmp/
+	ssh $user@$host sudo $wd/deploy-one --id $i --key $pk || exit 1
+	echo
 done
-
-# TODO: wait for all done
 
 for app in $apps
 do
-	ssh $master sudo service $app start || exit 1
+	ssh $user@$master sudo service $app start || exit 1
 	if [ $app = 'hadoop' ]; then
-		ssh $master sudo service $app init || exit 1
+		ssh $user@$master sudo service $app init || exit 1
 	fi
 done

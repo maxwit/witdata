@@ -49,9 +49,7 @@ echo "    MaxWit Distribution of Apache Hadoop"
 echo "###########################################"
 echo
 
-if [ -e ./.config ]; then
 	. ./.config
-fi
 
 hive_url=$hadoop_repo/apache-hive-${hive_version}-bin.tar.gz
 hadoop_url=$hadoop_repo/hadoop-${hadoop_version}tar.gz
@@ -60,7 +58,11 @@ pig_url=$hadoop_repo/pig-${pig_version}tar.gz
 spark_url=$hadoop_repo/spark-${spark_version}-bin-hadoop2.6.tgz
 zookeeper_url=$hadoop_repo/zookeeper-${zookeeper_version}tar.gz
 
-slaves=($config_slaves)
+# FIX the url
+java_url=/mnt/witpub/devel/java/jdk/jdk-${java_version}-linux-x64.tar.gz
+scala_url=/mnt/witpub/devel/scala/scala-${scala_version}.tgz
+
+slaves=(${config_slaves//,/ })
 
 if [ "${#slaves[@]}" -gt 0 ]; then
 	mode="cluster"
