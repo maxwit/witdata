@@ -11,8 +11,9 @@ do
 	echo
 done
 
-rm -f $profile # FIXME
 rm -rf $mdh_root || exit 1
+
+rm -f $profile # FIXME
 
 rm -vf $0
 

@@ -1,3 +1,3 @@
 cmd=$1
 
-$HBASE_HOME/$cmd-hbase.sh
+sudo -u $hadoop_user $HBASE_HOME/$cmd-hbase.sh
