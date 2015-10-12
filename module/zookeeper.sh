@@ -13,14 +13,10 @@ function zookeeper_deploy
 		for host in ${hosts[@]}
 		do
 			echo "server.$count=$host:2888:3888" >> conf/zoo.cfg
-			if [ $host = $my_name ]; then
-				echo $count > $data_dir/myid
-			fi
 			((count++))
 		done
 
-		[ -e $data_dir/myid ] || return 1
-		echo "my id: `cat $data_dir/myid`"
+		echo $myid > $data_dir/myid
 	fi
 
 	sed '/^#/d' conf/zoo.cfg 
