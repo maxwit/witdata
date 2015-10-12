@@ -108,13 +108,6 @@ EOF
 	fi
 }
 
-function hadoop_init
-{
-	sudo -i $hadoop_user hadoop fs -mkdir -p /tmp /user || return 1
-	sudo -i $hadoop_user hadoop fs -chmod g+w /tmp /user || return 1
-	sudo -i $hadoop_user hadoop fs -ls / || return 1
-}
-
 function hadoop_destroy
 {
 	sed -i '/HADOOP_/d' $profile

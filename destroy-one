@@ -1,0 +1,18 @@
+echo "Removing MDH ..."
+
+sudo -u $hadoop_user rm -rf $data_root
+userdel -r $hadoop_user
+
+for app in $app_rev
+do
+	rm -f /etc/init.d/$app
+	# execute ${app}_destroy || exit 1
+	rm -rf $"$app"_home
+	echo
+done
+
+rm -f $profile # FIXME
+rm -rf $mdh_root || exit 1
+
+echo "MDH removed successfully!"
+echo

@@ -1,85 +1,22 @@
 #!/bin/sh
 
-# FIXME
-version=1.0.0
+function del_env
+{
+	local key=$1
 
-if [ $UID -ne 0 ]; then
-	echo "pls run as root!"
-	exit 1
-fi
+	sed -i "/export $key/d" $profile
+}
 
-cd `dirname $0`
-top=$PWD
+function check_profile_path
+{
+	local path=$1
 
-opcode=deploy
+	grep "PATH=$path:" $profile > /dev/null || \
+		grep "PATH=.*:$path$" $profile > /dev/null || \
+			grep "PATH=.*:$path:" $profile > /dev/null
 
-while [ $# -gt 0 ]
-do
-	case $1 in
-	-d|--destroy)
-		opcode=destroy
-		;;
-	-i|--id)
-		this=$2
-		shift
-		;;
-	-k|--key)
-		pk=$2
-		shift
-	*)
-		echo "option '$1' not supported!"
-		exit 1
-	esac
-	shift
-done
-
-#hadoop_repo="repo.maxwit.com:/mnt/witpub/cloud/apache"
-hadoop_repo="/mnt/witpub/cloud/apache"
-
-hadoop_user=hadoop
-hadoop_user_home="/var/lib/$hadoop_user"
-data_root="$hadoop_user_home/data"
-
-util_root="/opt/util"
-mdh_root="/opt/mdh"
-
-echo "###########################################"
-echo "                 MDH v$version"
-echo "    MaxWit Distribution of Apache Hadoop"
-echo "###########################################"
-echo
-
-. ./.config
-
-slaves=(${config_slaves//,/ })
-
-if [ "${#slaves[@]}" -gt 0 ]; then
-	mode="cluster"
-	master=$config_master
-else
-	mode="pseudo"
-	master="localhost"
-fi
-
-hosts=($master $config_slaves)
-
-hive_url=$hadoop_repo/apache-hive-${hive_version}-bin.tar.gz
-hadoop_url=$hadoop_repo/hadoop-${hadoop_version}tar.gz
-hbase_url=$hadoop_repo/hbase-${hbase_version}-bin.tar.gz
-pig_url=$hadoop_repo/pig-${pig_version}tar.gz
-spark_url=$hadoop_repo/spark-${spark_version}-bin-hadoop2.6.tgz
-zookeeper_url=$hadoop_repo/zookeeper-${zookeeper_version}tar.gz
-
-# FIX the url
-java_url=/mnt/witpub/devel/java/jdk/jdk-${java_version}-linux-x64.tar.gz
-scala_url=/mnt/witpub/devel/scala/scala-${scala_version}.tgz
-
-if [ -e /etc/redhat-release ]; then
-	profile="/etc/bash_profile.d"
-else
-	profile="/etc/profile.d"
-fi
-profile="$profile/mdh.sh"
+	return $?
+}
 
 function add_env
 {
@@ -98,24 +35,6 @@ function add_env
 	#	echo "fail to export $key!"
 	#	exit 1
 	#fi
-}
-
-function del_env
-{
-	local key=$1
-
-	sed -i "/export $key/d" $profile
-}
-
-function check_profile_path
-{
-	local path=$1
-
-	grep "PATH=$path:" $profile > /dev/null || \
-		grep "PATH=.*:$path$" $profile > /dev/null || \
-			grep "PATH=.*:$path:" $profile > /dev/null
-
-	return $?
 }
 
 function add_path
@@ -171,6 +90,98 @@ function execute
 	echo
 }
 
+# FIXME
+version=1.0.0
+
+if [ $UID -ne 0 ]; then
+	echo "pls run as root!"
+	exit 1
+fi
+
+cd `dirname $0`
+top=$PWD
+
+slaves=()
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-m|--master)
+		master=$2
+		shift
+		;;
+	-s|--slaves)
+		slaves=(${2//,/ })
+		shift
+		;;
+	-i|--id)
+		this=$2
+		shift
+		;;
+	-k|--key)
+		pk=$2
+		shift
+	*)
+		echo "option '$1' not supported!"
+		echo "usage: `basename $0 [-m|--master <host name>] [-s|--slaves <slave list>]`"
+		exit 1
+	esac
+	shift
+done
+
+#hadoop_repo="repo.maxwit.com:/mnt/witpub/cloud/apache"
+hadoop_repo="/mnt/witpub/cloud/apache"
+
+hadoop_user=hadoop
+hadoop_user_home="/var/lib/$hadoop_user"
+data_root="$hadoop_user_home/data"
+
+util_root="/opt/util"
+mdh_root="/opt/mdh"
+
+echo "###########################################"
+echo "                 MDH v$version"
+echo "    MaxWit Distribution of Apache Hadoop"
+echo "###########################################"
+echo
+
+if [ "${#slaves[@]}" -gt 0 ]; then
+	if [ -z "$master" ]; then
+		echo "master not specified!"
+		echo "usage: xxx"
+		exit 1
+	fi
+	mode="cluster"
+else
+	if [ -z "$master" ]; then
+		master="localhost"
+	fi
+	mode="pseudo"
+fi
+
+hosts=($master ${slaves[@]})
+
+# FIXME: to be removed
+. configs/config-hadoop-2.7
+
+hive_url=$hadoop_repo/apache-hive-${hive_version}-bin.tar.gz
+hadoop_url=$hadoop_repo/hadoop-${hadoop_version}tar.gz
+hbase_url=$hadoop_repo/hbase-${hbase_version}-bin.tar.gz
+pig_url=$hadoop_repo/pig-${pig_version}tar.gz
+spark_url=$hadoop_repo/spark-${spark_version}-bin-hadoop2.6.tgz
+zookeeper_url=$hadoop_repo/zookeeper-${zookeeper_version}tar.gz
+
+# FIX the url
+java_url=/mnt/witpub/devel/java/jdk/jdk-${java_version}-linux-x64.tar.gz
+scala_url=/mnt/witpub/devel/scala/scala-${scala_version}.tgz
+
+if [ -e /etc/redhat-release ]; then
+	profile="/etc/bash_profile.d"
+else
+	profile="/etc/profile.d"
+fi
+profile="$profile/mdh.sh"
+
 log="/tmp/mdh-`date +%H%M%S`.log"
 echo "# MDH Log (`date`)" > $log
 echo >> $log
@@ -206,81 +217,74 @@ do
 	fi
 done
 
-if [ $opcode = deploy]; then
-	echo "MDH will be installed to '$mdh_root'"
+# do deploy
+echo "MDH will be installed to '$mdh_root'"
 
-	grep "^$hadoop_user:" /etc/passwd && \
-	{
-		echo "user '$hadoop_user' already exists!"
-		exit 1
-	}
-	useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
-	
-	sudo -i -u $hadoop_user mkdir .ssh
-	if [ ${hosts[$this]} == $master ]; then
-		sudo -i -u $hadoop_user cp $pk .ssh && \
-		sudo -i -u $hadoop_user cp ${pk%.pub} .ssh || exit 1
-	fi
-	sudo -i -u $hadoop_user cp $pk .ssh/authorized_keys
-	sudo -i -u $hadoop_user chmod 700 -R .ssh
-	
-	sudo -u $hadoop_user mkdir -p $data_root || exit 1
+grep "^$hadoop_user:" /etc/passwd && \
+{
+	echo "user '$hadoop_user' already exists!"
+	exit 1
+}
+useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
 
-	mkdir -p $util_root || exit 1
+sudo -i -u $hadoop_user mkdir .ssh
+if [ ${hosts[$this]} == $master ]; then
+	sudo -i -u $hadoop_user cp $pk .ssh && \
+	sudo -i -u $hadoop_user cp ${pk%.pub} .ssh || exit 1
+fi
+sudo -i -u $hadoop_user cp $pk .ssh/authorized_keys
+sudo -i -u $hadoop_user chmod 700 -R .ssh
 
-	for util in $util_list
-	do
-		download_and_extract $util
-		home=`echo $util | tr a-z A-Z`_HOME
-		add_env $home $"$util"_home
-		add_path "\$$home/bin"
-	done
+sudo -u $hadoop_user mkdir -p $data_root || exit 1
 
-	mkdir -p $mdh_root || exit 1
-	
-	for app in $app_seq
-	do
-		download_and_extract $app || exit 1
+mkdir -p $util_root || exit 1
 
-		cd $"$app"_home || exit 1
-		execute ${app}_deploy || exit 1
+for util in $util_list
+do
+	download_and_extract $util
+	home=`echo $util | tr a-z A-Z`_HOME
+	add_env $home $"$util"_home
+	add_path "\$$home/bin"
+done
 
-		service=/etc/init.d/$app
-		home=`echo $app | tr a-z A-Z`_HOME
-		cat > $service << EOF
+mkdir -p $mdh_root || exit 1
+
+for app in $app_seq
+do
+	download_and_extract $app || exit 1
+
+	cd $"$app"_home || exit 1
+	execute ${app}_deploy || exit 1
+
+	service=/etc/init.d/$app
+	home=`echo $app | tr a-z A-Z`_HOME
+	cat > $service << EOF
 #!/bin/sh
 
 $home=$"$app"_home
 
 EOF
-		cat $top/service/$app > $service
-		chmod +x $service
+	cat $top/service/$app >> $service
+	chmod +x $service
 
-		echo
-	done
-else
-	echo "MDH destroying ..."
+	echo
+done
 
-	grep "^$hadoop_user:" /etc/passwd || \
-	{
-		echo "hadoop not installed!"
-		exit 0
-	}
+destroy=$mdh_root/destroy-one
+cat > $destroy << EOF
+#!/bin/sh
 
-	for app in $app_rev
-	do
-		rm -f /etc/init.d/$app
-		execute ${app}_destroy || exit 1
-		rm -rf $"$app"_home
-		rm -f /etc/init.d/$app
-		echo
-	done
+echo "MDH destroying ..."
 
-	rm -rf $mdh_root || exit 1
-	sudo -u $hadoop_user rm -rf $data_root
+mdh_root=$mdh_root
+data_root=$data_root
+hadoop_user=$hadoop_user
+app_rev=$app_rev
+profile=$profile
+EOF
 
-	userdel -r $hadoop_user
-fi
+cat $top/destroy-one >> $destroy
+chmod a+x $destroy
 
-echo "MDH ${opcode}ed successfully!"
+echo "MDH deployed successfully!"
 echo
