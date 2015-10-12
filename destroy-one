@@ -12,6 +12,7 @@ do
 done
 
 rm -rf $mdh_root || exit 1
+rm -rf $util_root || exit 1
 
 rm -f $profile # FIXME
 

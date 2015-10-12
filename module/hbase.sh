@@ -1,6 +1,6 @@
 function hbase_deploy
 {
-	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${java_home}:" conf/hbase-env.sh
+	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${home_dict[java]}:" conf/hbase-env.sh
 
 	temp=`mktemp`
 
@@ -21,6 +21,7 @@ EOF
 
 	if [ $mode = 'cluster' ]; then
 		quorum=`echo ${hosts[@]} | sed 's/\s\+/,/g'`
+		echo "quorum=$quorum"
 		cat >> $temp << EOF
   <property>
     <name>hbase.zookeeper.quorum</name>
@@ -47,13 +48,14 @@ EOF
 		echo ${hosts[1]} > conf/backup-masters
 	fi
 
-	echo "region servers:"
-	cat conf/regionservers
-	echo
-
-	echo "backup masters:"
-	cat conf/backup-masters
-	echo
+	if [ -e conf/regionservers ]; then
+		echo "region servers:"
+		cat conf/regionservers
+	fi
+	if [ -e conf/backup-masters ]; then
+		echo "backup masters:"
+		cat conf/backup-masters
+	fi
 }
 
 function hbase_destroy
