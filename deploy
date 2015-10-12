@@ -19,18 +19,18 @@ done
 slaves=(${config_slaves//,/ })
 
 if [ "${#slaves[@]}" -gt 0 ]; then
-	#mode="cluster"
+	mode="cluster"
 	if [ -z "$config_master" ]; then
 		echo "invalid .config file!"
 		exit 1
 	fi
 	master=$config_master
 else
-	#mode="pseudo"
+	mode="pseudo"
 	master="localhost"
 fi
 
-hosts=($master $config_slaves)
+hosts=($master ${slaves[@]})
 
 if [ -n "$config_user" ]; then
 	user=$config_user
@@ -57,10 +57,12 @@ if [ $opcode = 'deploy' ]; then
 	# copy mdh
 	cp -r $PWD $temp
 	wd=$temp/`basename $PWD`
-	# ssh key
-	pk=$temp/ssh/id_rsa.pub
-	mkdir `dirname $pk`
-	ssh-keygen -P '' -f $pk
+	# ssh key for cluster mode
+	if [ $mode = 'cluster' ]; then
+		pk=$temp/ssh/id_rsa.pub
+		mkdir `dirname $pk`
+		ssh-keygen -P '' -f $pk
+	fi
 
 	total=${#hosts[@]}
 	for ((i=0; i<$total;i++))
@@ -68,7 +70,10 @@ if [ $opcode = 'deploy' ]; then
 		host=${hosts[$i]}
 		echo "[$((i+1))/$total] $host"
 		scp -q -r $temp $user@$host:/tmp/
-		ssh $user@$host sudo $wd/deploy-one --id $i --key $pk || exit 1
+		if [ $mode = 'cluster' ]; then
+			options="--id $i --key $pk --master $master --slave $config_slaves"
+		fi
+		ssh $user@$host sudo $wd/deploy-one $options || exit 1
 		ssh $user@$host rm -rf $temp
 		echo
 	done
@@ -94,5 +99,8 @@ else
 		ssh $user@$master sudo service $app stop || exit 1
 	done
 
-	# TODO
+	for host in ${hosts[@]}	
+	do
+		ssh $user@$host sudo /opt/destroy-one || exit 1
+	done
 fi

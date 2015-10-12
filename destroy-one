@@ -14,5 +14,7 @@ done
 rm -f $profile # FIXME
 rm -rf $mdh_root || exit 1
 
+rm -vf $0
+
 echo "MDH removed successfully!"
 echo

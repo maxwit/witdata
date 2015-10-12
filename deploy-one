@@ -270,7 +270,9 @@ EOF
 	echo
 done
 
-destroy=$mdh_root/destroy-one
+# FIXME
+destroy=/opt/destroy-one
+
 cat > $destroy << EOF
 #!/bin/sh
 
