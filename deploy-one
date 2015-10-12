@@ -72,11 +72,6 @@ fi
 
 hosts=($master $config_slaves)
 
-if [ -z "$JAVA_HOME" ]; then
-	echo -e "JAVA_HOME not set!\n"
-	exit 1
-fi
-
 if [ -e /etc/redhat-release ]; then
 	profile="/etc/bash_profile.d"
 else

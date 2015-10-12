@@ -24,7 +24,8 @@ ssh-keygen -P '' -f $temp/ssh/id_rsa.pub
 
 for ((i=0; i<${#hosts[@]};i++))
 do
-	scp -r $temp $host:/tmp/
+	echo "$i: ${hosts[$i]}"
+	scp -q -r $temp $host:/tmp/
 	ssh $host sudo $temp/deploy-one --key $temp/ssh --id $i
 done
 
