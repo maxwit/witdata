@@ -1,6 +1,7 @@
 function hadoop_deploy
 {
-	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${JAVA_HOME}:" etc/hadoop/hadoop-env.sh
+	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${java_home}:" \
+		etc/hadoop/hadoop-env.sh
 
 	bin/hadoop version || return 1
 

@@ -16,7 +16,7 @@ function zookeeper_deploy
 			((count++))
 		done
 
-		echo $myid > $data_dir/myid
+		echo $((this+1))> $data_dir/myid
 	fi
 
 	sed '/^#/d' conf/zoo.cfg 

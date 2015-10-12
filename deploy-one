@@ -1,63 +1,47 @@
 #!/bin/sh
 
+# FIXME
+version=1.0.0
+
 if [ $UID -ne 0 ]; then
 	echo "pls run as root!"
 	exit 1
 fi
 
-# FIXME
-version=1.0.0
-
-#hadoop_repo="repo.maxwit.com:/mnt/witpub/cloud/apache"
-hadoop_repo="/mnt/witpub/cloud/apache"
-
 cd `dirname $0`
 top=$PWD
 
-tmp_dir=`mktemp -d`
+opcode=deploy
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-d|--destroy)
+		opcode=destroy
+		;;
+	-i|--id)
+		this=$2
+		shift
+		;;
+	-k|--key)
+		pk=$2
+		shift
+	*)
+		echo "option '$1' not supported!"
+		exit 1
+	esac
+	shift
+done
+
+#hadoop_repo="repo.maxwit.com:/mnt/witpub/cloud/apache"
+hadoop_repo="/mnt/witpub/cloud/apache"
 
 hadoop_user=hadoop
 hadoop_user_home="/var/lib/$hadoop_user"
 data_root="$hadoop_user_home/data"
 
+util_root="/opt/util"
 mdh_root="/opt/mdh"
-
-ssh_setup()
-{
-	kt="rsa"
-	kf="id_$kt"
-
-	if [ ! -f ~/.ssh/${kf} ]; then
-		ssh-keygen -P '' -f ~/.ssh/${kf}
-	fi
-
-	#key=`cat ~/.ssh/${kf}.pub`
-	#grep "$key" ~/.ssh/authorized_keys > /dev/null 2>&1|| echo "$key" >> ~/.ssh/authorized_keys
-
-	total=${#hosts[@]}
-	count=1
-
-	for host in ${hosts[@]}
-	do
-		echo "Copying $kf [$count/$total]: $host ..."
-		# TODO: no-interactive support
-		ssh-copy-id $host
-
-		((count++))
-		echo
-	done
-
-	for host in ${hosts[@]}
-	do
-		ssh $host echo "login $host successfully!"
-	done
-	echo
-}
-
-if [ $# -ne 1 ]; then
-	echo "usage: `basename $0` <init|deploy|destroy|test|start|stop>"
-	exit 1
-fi
 
 echo "###########################################"
 echo "                 MDH v$version"
@@ -81,30 +65,12 @@ slaves=($config_slaves)
 if [ "${#slaves[@]}" -gt 0 ]; then
 	mode="cluster"
 	master=$config_master
-	myid=$1
 else
 	mode="pseudo"
 	master="localhost"
 fi
 
 hosts=($master $config_slaves)
-
-echo "Deploying MDH ($mode mode)"
-if [ $mode = 'cluster' ]; then
-	echo "Cluster nodes:"
-	i=0
-	for host in ${hosts[@]}
-	do
-		((i++))
-		echo "[$i] $host"
-	done
-fi
-echo
-
-if [ $cmd = 'init' ]; then
-	ssh_setup
-	exit $?
-fi
 
 if [ -z "$JAVA_HOME" ]; then
 	echo -e "JAVA_HOME not set!\n"
@@ -113,16 +79,12 @@ fi
 
 if [ -e /etc/redhat-release ]; then
 	profile="/etc/bash_profile.d"
-	installer=yum
 else
 	profile="/etc/profile.d"
-	installer=apt-get
 fi
-profile="$profile/hadoop.sh"
+profile="$profile/mdh.sh"
 
-$installer install -y rsync openssh-server || exit 1
-
-add_env()
+function add_env
 {
 	local key=$1
 	local val=$2
@@ -139,19 +101,16 @@ add_env()
 	#	echo "fail to export $key!"
 	#	exit 1
 	#fi
-
-	#eval export $key=$val
 }
 
-del_env()
+function del_env
 {
 	local key=$1
 
 	sed -i "/export $key/d" $profile
-	unset $key
 }
 
-check_profile_path()
+function check_profile_path
 {
 	local path=$1
 
@@ -162,47 +121,43 @@ check_profile_path()
 	return $?
 }
 
-add_path()
+function add_path
 {
 	local path=$1
 
 	echo "export PATH=$path:\$PATH" >> $profile
 	#check_profile_path $path || echo "export PATH=$path:\$PATH" >> $profile
 	#check_profile_path $path || exit 1
-
-	## FIXME
-	#echo $PATH | grep -w $path || \
-	#	eval export PATH="$path:\$PATH"
 }
 
-del_path()
+function del_path
 {
 	local path=$1
 	check_profile_path $path && sed -i "#PATH=.*$path#d" $profile
 
 	local NEW_PATH=`echo $PATH | sed -e 's#$path:##' | sed -e 's#:$path##'`
-	eval export PATH=$NEW_PATH
 }
 
-extract()
+function download_and_extract
 {
 	local app=$1
 	local url=$"$app"_url
+	local dest=$"$app"_home
+	local downloads=`mktemp -d`
 	#local tarball=`basename $url`
-	local dest=$mdh_root/$app
 
-	#scp $url $tmp_dir || return 1
-	echo -n "extracting $tarball -> $dest . "
-	cd $tmp_dir
+	#scp $url $downloads || return 1
+	echo -n "downloading and extracting $tarball ."
+	cd $downloads
 	tar xf $url || return 1
 	echo -n "."
- 	mv *$app* $dest || return 1
+ 	mv * $dest || return 1
 	echo -n "."
-	cd $dest
+	rm -rf $downloads
 	echo " done"
 }
 
-execute()
+function execute
 {
 	func=$1
 
@@ -223,91 +178,102 @@ log="/tmp/mdh-`date +%H%M%S`.log"
 echo "# MDH Log (`date`)" > $log
 echo >> $log
 
-apps=""
-rev_apps=""
+app_seq=""
+app_rev=""
 
-for app in hadoop hive pig zookeeper hbase spark
+for app in hadoop zookeeper hbase spark
 do
-	app_ver=$"$app"_version
-	if [ -n "$app_ver" ]; then
-		apps="$apps $app"
-		rev_apps="$app $rev_apps"
+	ver=$"$app"_version
+	if [ -n "$ver" ]; then
+		app_seq="$app_seq $app"
+		app_rev="$app $app_rev"
+
+		"$app"_home=$mdh_root/$app
+
+		module="module/$app.sh"
+		if [ ! -e $module ]; then
+			echo "$module does not exists!"
+			exit 1
+		fi
+		. $module
 	fi
 done
 
-for app in $apps
+util_list=""
+for util in java scala pig
 do
-	module="module/$app.sh"
-	if [ ! -e $module ]; then
-		echo "$module does not exists!"
+	ver=$"$util"_version
+	if [ -n "$ver" ]; then
+		"$util"_home=$util_root/$util
+		util_list="$util_list $util"
+	fi
+done
+
+if [ $opcode = deploy]; then
+	echo "MDH will be installed to '$mdh_root'"
+
+	grep "^$hadoop_user:" /etc/passwd && \
+	{
+		echo "user '$hadoop_user' already exists!"
 		exit 1
+	}
+	useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
+	
+	sudo -i -u $hadoop_user mkdir .ssh
+	if [ ${hosts[$this]} == $master ]; then
+		sudo -i -u $hadoop_user cp $pk .ssh && \
+		sudo -i -u $hadoop_user cp ${pk%.pub} .ssh || exit 1
 	fi
+	sudo -i -u $hadoop_user cp $pk .ssh/authorized_keys
+	sudo -i -u $hadoop_user chmod 700 -R .ssh
+	
+	sudo -u $hadoop_user mkdir -p $data_root || exit 1
 
-	. $module
-done
+	mkdir -p $util_root || exit 1
 
-echo "MDH will be installed to '$mdh_root'"
-
-grep "^$hadoop_user:" /etc/passwd && \
-{
-	echo "user '$hadoop_user' already exists!"
-	exit 1
-}
-useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
-
-sudo -i -u $hadoop_user mkdir .ssh && \
-sudo -i -u $hadoop_user chmod 700 .ssh && \
-sudo -i -u $hadoop_user ssh-keygen -P '' -f .ssh/id_rsa || exit 1
-
-sudo -u $hadoop_user mkdir -p $data_root || exit 1
-mkdir -p $mdh_root || exit 1
-# chown $hadoop_user.$hadoop_user $mdh_root || exit 1
-
-cmd=`basename $0`
-cmd=${cmd%-one}
-
-if [ $cmd = deploy]; then
-	for app in $apps
+	for util in $util_list
 	do
-		extract $app
+		download_and_extract $util
+		home=`echo $util | tr a-z A-Z`_HOME
+		add_env $home $"$util"_home
+		add_path "\$$home/bin"
+	done
+
+	mkdir -p $mdh_root || exit 1
+	
+	for app in $app_seq
+	do
+		download_and_extract $app || exit 1
+
+		cd $"$app"_home || exit 1
 		execute ${app}_deploy || exit 1
 
-		APP="echo $app | tr a-z A-Z"
-		sed "s:${APP}_HOME=.*:${APP}_HOME=$mdh_root/$app:" \
-			$top/service/$app > /etc/init.d/$app
-		chmod a+x /etc/init.d/$app
-
-		/etc/init.d/$app start
-
-		if [ $app = hadoop ]; then
-			hadoop_init
-		fi
+		cp $top/service/$app /etc/init.d/$app
 
 		echo
 	done
 else
+	echo "MDH destroying ..."
+
 	grep "^$hadoop_user:" /etc/passwd || \
 	{
 		echo "hadoop not installed!"
 		exit 0
 	}
 
-	for app in $rev_apps
+	for app in $app_rev
 	do
-		/etc/init.d/$app stop
 		rm -f /etc/init.d/$app
-
-		cd $top
 		execute ${app}_destroy || exit 1
-
-		rm -rf $mdh_root/$app
+		rm -rf $"$app"_home
 		echo
 	done
 
 	rm -rf $mdh_root || exit 1
 	sudo -u $hadoop_user rm -rf $data_root
+
 	userdel -r $hadoop_user
 fi
 
-echo "MDH ${cmd}ed successfully!"
+echo "MDH ${opcode}ed successfully!"
 echo

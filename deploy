@@ -1,0 +1,39 @@
+#!/bin/sh
+
+echo "Deploying MDH ($mode mode)"
+if [ $mode = 'cluster' ]; then
+	echo "Cluster nodes:"
+	i=0
+	for host in ${hosts[@]}
+	do
+		((i++))
+		echo "[$i] $host"
+	done
+fi
+echo
+
+for host in ${hosts[@]}
+do
+	ssh-copy-id $host
+done
+
+temp=`mktemp -d`
+cp -r $PWD $temp
+mkdir $temp/ssh
+ssh-keygen -P '' -f $temp/ssh/id_rsa.pub
+
+for ((i=0; i<${#hosts[@]};i++))
+do
+	scp -r $temp $host:/tmp/
+	ssh $host sudo $temp/deploy-one --key $temp/ssh --id $i
+done
+
+# TODO: wait for all done
+
+for app in $apps
+do
+	ssh $master sudo service $app start || exit 1
+	if [ $app = 'hadoop' ]; then
+		ssh $master sudo service $app init || exit 1
+	fi
+done

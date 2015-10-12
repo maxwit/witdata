@@ -1,6 +1,6 @@
 function hbase_deploy
 {
-	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${JAVA_HOME}:" conf/hbase-env.sh
+	sed -i "s:# export JAVA_HOME=.*:export JAVA_HOME=${java_home}:" conf/hbase-env.sh
 
 	temp=`mktemp`
 
