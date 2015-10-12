@@ -1,41 +1,44 @@
 #!/bin/sh
 
-user=$USER
-master='localhost'
-
+opcode=deploy
 while [ $# -gt 0 ]
 do
 	case $1 in
-	-u|--user)
-		user=$2
-		shift
-		;;
-	-m|--master)
-		master=$2
-		shift
-		;;
-	-s|--slaves)
-		slaves=$2
-		shift
+	-d|--destroy)
+		opcode=destroy
 		;;
 	*)
-		echo "usage: `basename $0 [-m|--master <host name>] [-s|--slaves <slave list>]`"
+		echo "option '$1' not supported!"
 		exit 1
 	esac
-
 	shift
 done
 
-cp -v configs/config-hadoop-2.7 .config || exit 1
+. ./.config
 
-if [ -n "$slaves" ]; then
-	cat >> .config << EOF
-config_master=$master
-config_slaves=$slaves
-EOF
+slaves=(${config_slaves//,/ })
+
+if [ "${#slaves[@]}" -gt 0 ]; then
+	#mode="cluster"
+	if [ -z "$config_master" ]; then
+		echo "invalid .config file!"
+		exit 1
+	fi
+	master=$config_master
+else
+	#mode="pseudo"
+	master="localhost"
 fi
 
-echo "Deploying MDH ($mode mode)"
+hosts=($master $config_slaves)
+
+if [ -n "$config_user" ]; then
+	user=$config_user
+else
+	user=$USER
+fi
+
+#echo "Deploying MDH ($mode mode)"
 echo "Cluster nodes:"
 i=0
 for host in ${hosts[@]}
@@ -44,34 +47,52 @@ do
 	echo "[$i] $host"
 done
 
-for host in ${hosts[@]}
-do
-	ssh-copy-id $host
-done
+if [ $opcode = 'deploy' ]; then
+	for host in ${hosts[@]}
+	do
+		ssh-copy-id $host
+	done
 
-temp=`mktemp -d`
-# copy mdh
-cp -r $PWD $temp
-wd=$temp/`basename $PWD`
-# ssh key
-pk=$temp/ssh/id_rsa.pub
-mkdir `dirname $pk`
-ssh-keygen -P '' -f $pk
+	temp=`mktemp -d`
+	# copy mdh
+	cp -r $PWD $temp
+	wd=$temp/`basename $PWD`
+	# ssh key
+	pk=$temp/ssh/id_rsa.pub
+	mkdir `dirname $pk`
+	ssh-keygen -P '' -f $pk
 
-total=${#hosts[@]}
-for ((i=0; i<$total;i++))
-do
-	host=${hosts[$i]}
-	echo "[$((i+1))/$total] $host"
-	scp -q -r $temp $user@$host:/tmp/
-	ssh $user@$host sudo $wd/deploy-one --id $i --key $pk || exit 1
-	echo
-done
+	total=${#hosts[@]}
+	for ((i=0; i<$total;i++))
+	do
+		host=${hosts[$i]}
+		echo "[$((i+1))/$total] $host"
+		scp -q -r $temp $user@$host:/tmp/
+		ssh $user@$host sudo $wd/deploy-one --id $i --key $pk || exit 1
+		ssh $user@$host rm -rf $temp
+		echo
+	done
 
-for app in $apps
-do
-	ssh $user@$master sudo service $app start || exit 1
-	if [ $app = 'hadoop' ]; then
-		ssh $user@$master sudo service $app init || exit 1
-	fi
-done
+	rm -rf $temp
+
+	for app in $app_seq
+	do
+		ssh $user@$master sudo service $app start || exit 1
+		if [ $app = 'hadoop' ]; then
+			ssh $user@$master sudo service $app init || exit 1
+		fi
+	done
+else
+	app_rev=""
+	for app in $app_seq
+	do
+		app_rev="$app $app_rev"
+	done
+
+	for app in $app_rev
+	do
+		ssh $user@$master sudo service $app stop || exit 1
+	done
+
+	# TODO
+fi
