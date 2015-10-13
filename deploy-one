@@ -170,7 +170,7 @@ echo
 test -e /etc/mdh.conf && \
 {
 	echo "MDH already installed!"
-	exit 1
+	exit 0
 }
 
 if [ "${#slaves[@]}" -gt 0 ]; then
@@ -215,9 +215,9 @@ else
 fi
 profile="$profile/mdh.sh"
 
-log="/tmp/mdh-`date +%H%M%S`.log"
-echo "# MDH Log (`date`)" > $log
-echo >> $log
+#log="/tmp/mdh-`date +%H%M%S`.log"
+#echo "# MDH Log (`date`)" > $log
+#echo >> $log
 
 app_seq=""
 app_rev=""
@@ -248,15 +248,6 @@ do
 	fi
 done
 
-cat > /etc/mdh.conf << EOF
-mode=$mode
-mdh_root=$mdh_root
-util_root=$util_root
-hadoop_user=$hadoop_user
-app_rev="$app_rev"
-profile=$profile
-EOF
-
 mkdir -p $mdh_root || exit 1
 
 cp $top/destroy-one $mdh_root/destroy
@@ -271,7 +262,7 @@ if grep "^$hadoop_user:" /etc/passwd > /dev/null; then
 	exit 1
 fi
 
-echo "create user '$hadoop_user' ..."
+echo "creating user '$hadoop_user' ..."
 useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
 
 sudo -i -u $hadoop_user mkdir -m 700 .ssh
@@ -340,6 +331,15 @@ if [ $mode != 'cluster' ]; then
 		echo
 	done
 fi
+
+cat > /etc/mdh.conf << EOF
+mode=$mode
+mdh_root=$mdh_root
+util_root=$util_root
+hadoop_user=$hadoop_user
+app_rev="$app_rev"
+profile=$profile
+EOF
 
 echo "MDH deployed successfully!"
 echo

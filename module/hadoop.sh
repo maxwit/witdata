@@ -100,8 +100,8 @@ EOF
 
 	rm -rf $temp
 
-	echo -n "formatting namenode ... "
-	sudo -u $hadoop_user bin/hdfs namenode -format > $log 2>&1 || return 1
+	#echo -n "formatting namenode ... "
+	sudo -u $hadoop_user bin/hdfs namenode -format # > $log 2>&1 || return 1
 	echo "done"
 
 	add_env HADOOP_HOME $PWD

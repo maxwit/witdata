@@ -14,7 +14,9 @@ do
 	shift
 done
 
-. ./.config
+if [ -e ./.config ]; then
+	. ./.config
+fi
 
 slaves=(${config_slaves//,/ })
 
@@ -52,44 +54,61 @@ do
 done
 
 if [ $opcode = 'deploy' ]; then
+	if [ ! -e ~/.ssh/id_rsa.pub ]; then
+		mkdir -p -m 700 ~/.ssh
+		ssh-keygen -P '' -f ~/.ssh/id_rsa
+	fi
+
 	for host in ${hosts[@]}
 	do
-		ssh-copy-id $host
+		ssh-copy-id -o StrictHostKeyChecking=no $host || exit 1
 	done
 
-	temp=`mktemp -d`
-	# copy mdh
-	cp -r $PWD $temp
-	wd=$temp/`basename $PWD`
-	# generate ssh key if cluster mode
 	if [ $mode = 'cluster' ]; then
-		pk=$temp/ssh/id_rsa
-		mkdir -p `dirname $pk`
-		ssh-keygen -P '' -C "$user@$master" -f $pk || exit 1
+		temp=`mktemp -d`
+		ssh-keygen -P '' -C "$user@$master" -f $temp/id_rsa || exit 1
+		chmod a+r $temp/id_rsa
 	fi
+
+	wd=`basename $PWD`
 
 	total=${#hosts[@]}
 	for ((i=0; i<$total;i++))
 	do
 		host=${hosts[$i]}
 		echo "[$((i+1))/$total] $host"
-		scp -q -r $temp $user@$host:/tmp/
+		dest=`ssh $user@$host mktemp -d`
+		ssh $user@$host chmod a+rx $dest
+		scp -q -r $PWD $user@$host:$dest
 		if [ $mode = 'cluster' ]; then
-			options="--id $i --key $pk.pub --master $master --slave $config_slaves"
+			scp -q $temp/id_rsa.pub $user@$host:$dest
+			if [ $host = $master ]; then
+				scp -q $temp/id_rsa $user@$host:$dest
+			fi
+			options="--id $i --key $dest/id_rsa.pub --master $master --slaves $config_slaves"
 		fi
-		ssh $user@$host sudo $wd/deploy-one $options || exit 1
-		ssh $user@$host rm -rf $temp
+		ssh $user@$host sudo $dest/$wd/deploy-one $options || exit 1
+		ssh $user@$host rm -rf $dest
 		echo
 	done
 
-	rm -rf $temp
+	if [ $mode = 'cluster' ]; then
+		rm -rf $temp
+	fi
 
+	hbase_installed=`echo $app_seq | grep hbase`
 	for app in $app_seq
 	do
-		ssh $user@$master sudo service $app start || exit 1
-		if [ $app = 'hadoop' ]; then
-			ssh $user@$master sudo service $app init || exit 1
+		echo "staring $app ..."
+		if [ $app = zookeeper -a -n "$hbase_installed" ]; then
+			echo "(skipped)"
+		else
+			ssh $user@$master sudo service $app start || exit 1
+			if [ $app = 'hadoop' ]; then
+				ssh $user@$master sudo service $app init || exit 1
+			fi
 		fi
+		echo
 	done
 else
 	app_rev=""
@@ -98,9 +117,16 @@ else
 		app_rev="$app $app_rev"
 	done
 
+	hbase_installed=`echo $app_seq | grep hbase`
 	for app in $app_rev
 	do
-		ssh $user@$master sudo service $app stop || exit 1
+		echo "stopping $app ..."
+		if [ $app = zookeeper -a -n "$hbase_installed" ]; then
+			echo "(skipped)"
+		else
+			ssh $user@$master sudo service $app stop || exit 1
+		fi
+		echo
 	done
 
 	for host in ${hosts[@]}	
