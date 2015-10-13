@@ -61,25 +61,35 @@ function del_path
 function download_and_extract
 {
 	local app=$1
-	local downloads=`mktemp -d`
+	#local downloads=`mktemp -d`
 	local url=${conf_url[$app]}
-	local dest=${home_dict[$app]}
+	local dest=`dirname ${home_dict[$app]}`
 	local tarball=`basename $url`
+	local real
+	local count=0
 
-	if [ -e $dest ]; then
+	if [ -e ${home_dict[$app]} ]; then
 		echo "$dest exists!"
-		return 1
+		return 0
 	fi
+
 	#scp $url $downloads || return 1
-	cd $downloads
+	#cd $downloads
 	echo -n "extracting $tarball ."
-	tar xf $url || return 1
-	echo -n "."
- 	mv * $dest || return 1
-	echo -n "."
-	rm -rf $downloads
+	real=(`tar -tf $url | head -2`)
+	real=${real[1]%%/*}
+	tar --no-same-owner -xvf $url -C $dest | while read line
+	do
+		((count++))
+		if [ $((count % 100)) == 0 ]; then
+			echo -n '.'
+		fi
+	done || return 1
 	echo " done"
-	cd - > /dev/null
+
+ 	mv $dest/{$real,$app} || return 1
+	#rm -rf $downloads
+	#cd - > /dev/null
 
 	return 0
 }
@@ -236,13 +246,18 @@ destroy=/opt/destroy-one
 cat > $destroy << EOF
 #!/bin/sh
 
+if [ \$UID -ne 0 ]; then
+	echo "pls run as root!"
+	exit 1
+fi
+
 echo "MDH destroying ..."
 
 mdh_root=$mdh_root
 util_root=$util_root
 data_root=$data_root
 hadoop_user=$hadoop_user
-app_rev=$app_rev
+app_rev="$app_rev"
 profile=$profile
 EOF
 
@@ -319,6 +334,11 @@ do
 #!/bin/sh
 #
 #
+
+if [ \$# -ne 1 ]; then
+	echo "usage: xxx"
+	exit 1
+fi
 
 hadoop_user=$hadoop_user
 $home=${home_dict[$app]}

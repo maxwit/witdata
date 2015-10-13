@@ -5,10 +5,13 @@ userdel -r $hadoop_user
 
 for app in $app_rev
 do
-	rm -f /etc/init.d/$app
-	# execute ${app}_destroy || exit 1
-	rm -rf $"$app"_home
-	echo
+	if [ -e /etc/init.d/$app ]; then
+		echo "removing $app ..."
+		rm -f /etc/init.d/$app
+		# execute ${app}_destroy || exit 1
+		rm -rf $"$app"_home
+		echo
+	fi
 done
 
 rm -rf $mdh_root || exit 1
