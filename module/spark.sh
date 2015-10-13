@@ -17,4 +17,7 @@ function spark_deploy
 			echo $slave >> conf/slaves
 		done
 	fi
+
+	cp $top/service/spark /etc/init.d/ || exit 1
+	chmod +x /etc/init.d/spark
 }

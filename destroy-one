@@ -2,23 +2,29 @@
 
 function hadoop_destroy
 {
+	rm -f /etc/init.d/hadoop
+
 	rm -rf /var/log/$hadoop_user
 	sed -i '/HADOOP_/d' $profile
 }
 
 function zookeeper_destroy
 {
+	rm -f /etc/init.d/zookeeper
+
 	sed -i '/ZOOKEEPER_HOME/d' $profile
 	sudo -u $hadoop_user rm -rf $zk_data_dir
 }
 
 function hbase_destroy
 {
+	rm -f /etc/init.d/hbase
 	sed -i '/HBASE_HOME/d' $profile
 }
 
 function spark_destroy
 {
+	rm -f /etc/init.d/spark
 	sed -i '/SPARK_/d' $profile
 }
 
@@ -31,25 +37,38 @@ echo "Removing MDH ..."
 
 . /etc/mdh.conf
 
+if [ $mode != 'cluster' ]; then
+	hbase_installed=0
+	for app in $app_rev
+	do
+		echo "stoping $app ..."
+		if [ $app = zookeeper -a $hbase_installed = 1 ]; then
+			echo "(skipped)"
+		else
+			if [ $app = 'hbase' ]; then
+				hbase_installed=1
+			fi
+			service $app stop || exit 1
+		fi
+		echo
+	done
+fi
+
 for app in $app_rev
 do
-	if [ -e /etc/init.d/$app ]; then
-		echo "removing $app ..."
-		service $app stop || exit 1
-		rm -f /etc/init.d/$app
-		${app}_destroy
-		rm -rf $"$app"_home
-	fi
+	echo "removing $app ..."
+	${app}_destroy
+	#rm -rf $"$app"_home
 done
+echo
+
+userdel -r $hadoop_user || exit 1
 
 rm -rf $util_root || exit 1
 
 rm -f $profile # FIXME
 
 rm -rf $mdh_root || exit 1
-
-
-userdel -r $hadoop_user || exit 1
 
 rm -f /etc/mdh.conf
 

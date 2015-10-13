@@ -21,4 +21,7 @@ function zookeeper_deploy
 
 	add_env ZOOKEEPER_HOME $PWD
 	add_path '$ZOOKEEPER_HOME/bin'
+
+	cp $top/service/zookeeper /etc/init.d/ || exit 1
+	chmod +x /etc/init.d/zookeeper
 }

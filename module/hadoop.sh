@@ -115,4 +115,7 @@ EOF
 			echo $slave >> etc/hadoop/slaves
 		done
 	fi
+
+	cp $top/service/hadoop /etc/init.d/ || exit 1
+	chmod +x /etc/init.d/hadoop
 }

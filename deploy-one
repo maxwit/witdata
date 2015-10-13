@@ -249,6 +249,7 @@ do
 done
 
 cat > /etc/mdh.conf << EOF
+mode=$mode
 mdh_root=$mdh_root
 util_root=$util_root
 hadoop_user=$hadoop_user
@@ -266,11 +267,12 @@ echo "MDH will be installed to '$mdh_root'"
 echo
 
 if grep "^$hadoop_user:" /etc/passwd > /dev/null; then
-	echo "Warning: user '$hadoop_user' already exists!"
-else
-	echo "create user '$hadoop_user' ..."
-	useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
+	echo "user '$hadoop_user' already exists!"
+	exit 1
 fi
+
+echo "create user '$hadoop_user' ..."
+useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
 
 sudo -i -u $hadoop_user mkdir -m 700 .ssh
 if [ ${hosts[$this]} == $master ]; then
@@ -279,7 +281,7 @@ if [ ${hosts[$this]} == $master ]; then
 		sudo -i -u $hadoop_user cp $pk .ssh && \
 		sudo -i -u $hadoop_user cp ${pk%.pub} .ssh || exit 1
 	else
-		sudo -u $hadoop_user ssh-keygen -P '' -f $hadoop_user_home/.ssh/id_rsa > /dev/null || exit 1
+		sudo -u $hadoop_user ssh-keygen -P '' -f $hadoop_user_home/.ssh/id_rsa || exit 1
 	fi
 	sudo -i -u $hadoop_user cp .ssh/id_rsa.pub .ssh/authorized_keys
 	if [ $mode != 'cluster' ]; then
@@ -318,9 +320,6 @@ do
 	cd ${home_dict[$app]} && \
 	execute ${app}_deploy || exit 1
 
-	cp $top/service/$app /etc/init.d/ || exit 1
-	chmod +x /etc/init.d/$app
-
 	echo
 done
 
@@ -330,9 +329,13 @@ if [ $mode != 'cluster' ]; then
 	for app in $app_seq
 	do
 		echo "staring $app ..."
-		service $app start || exit 1
-		if [ $app = 'hadoop' ]; then
-			service $app init || exit 1
+		if [ $app = zookeeper -a -n "${conf_version[hbase]}" ]; then
+			echo "(skipped)"
+		else
+			service $app start || exit 1
+			if [ $app = 'hadoop' ]; then
+				service $app init || exit 1
+			fi
 		fi
 		echo
 	done

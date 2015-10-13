@@ -58,4 +58,7 @@ EOF
 		echo "backup masters:"
 		cat conf/backup-masters
 	fi
+
+	cp $top/service/hbase /etc/init.d/ || exit 1
+	chmod +x /etc/init.d/hbase
 }
