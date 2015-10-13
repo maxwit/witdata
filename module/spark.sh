@@ -17,8 +17,3 @@ function spark_deploy
 		done
 	fi
 }
-
-function spark_destroy
-{
-	sed -i '/SPARK_/d' $profile
-}

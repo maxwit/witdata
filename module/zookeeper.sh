@@ -24,8 +24,3 @@ function zookeeper_deploy
 	add_env ZOOKEEPER_HOME $PWD
 	add_path '$ZOOKEEPER_HOME/bin'
 }
-
-function zookeeper_destroy
-{
-	sed -i '/ZOOKEEPER_HOME/d' $profile
-}

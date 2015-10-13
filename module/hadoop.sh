@@ -116,9 +116,3 @@ EOF
 		done
 	fi
 }
-
-function hadoop_destroy
-{
-	rm -rf /var/log/$hadoop_user
-	sed -i '/HADOOP_/d' $profile
-}

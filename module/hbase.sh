@@ -57,8 +57,3 @@ EOF
 		cat conf/backup-masters
 	fi
 }
-
-function hbase_destroy
-{
-	sed -i '/HBASE_HOME/d' $profile
-}
