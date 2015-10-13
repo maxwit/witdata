@@ -4,7 +4,7 @@ function zookeeper_deploy
 
 	mkdir -p $data_dir || return 1
 
-	cp -v conf/zoo{_sample,}.cfg || return 1
+	cp conf/zoo{_sample,}.cfg || return 1
 	sed -i "s:^dataDir=.*:dataDir=$data_dir:" conf/zoo.cfg
 
 	if [ $mode = "cluster" ]; then

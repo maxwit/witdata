@@ -1,25 +1,55 @@
+#!/bin/sh
+
+function hadoop_destroy
+{
+	rm -rf /var/log/$hadoop_user
+	sed -i '/HADOOP_/d' $profile
+}
+
+function zookeeper_destroy
+{
+	sed -i '/ZOOKEEPER_HOME/d' $profile
+}
+
+function hbase_destroy
+{
+	sed -i '/HBASE_HOME/d' $profile
+}
+
+function spark_destroy
+{
+	sed -i '/SPARK_/d' $profile
+}
+
+if [ $UID -ne 0 ]; then
+	echo "pls run as root!"
+	exit 1
+fi
+
 echo "Removing MDH ..."
 
+. /etc/mdh.conf
+
+rm -f /etc/mdh.conf
+
 sudo -u $hadoop_user rm -rf $data_root
-userdel -r $hadoop_user
+userdel -r $hadoop_user || exit 1
 
 for app in $app_rev
 do
 	if [ -e /etc/init.d/$app ]; then
 		echo "removing $app ..."
 		rm -f /etc/init.d/$app
-		# execute ${app}_destroy || exit 1
+		${app}_destroy
 		rm -rf $"$app"_home
-		echo
 	fi
 done
 
-rm -rf $mdh_root || exit 1
 rm -rf $util_root || exit 1
 
 rm -f $profile # FIXME
 
-rm -vf $0
+rm -rf $mdh_root || exit 1
 
 echo "MDH removed successfully!"
 echo

@@ -1,7 +1,16 @@
 function hadoop_deploy
 {
-	sed -i "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${home_dict[java]}:" \
+	mkdir -p /var/log/$hadoop_user
+	chown $hadoop_user.$hadoop_user /var/log/$hadoop_user
+
+	sed -i -e "s:export JAVA_HOME=\${JAVA_HOME}:export JAVA_HOME=${home_dict[java]}:" \
+		-e 's:#export HADOOP_LOG_DIR=.*:export HADOOP_LOG_DIR=/var/log/$USER:' \
 		etc/hadoop/hadoop-env.sh
+
+	sed -i -e 's:#export HADOOP_MAPRED_LOG_DIR=.*:export HADOOP_MAPRED_LOG_DIR=/var/log/$USER:' \
+		etc/hadoop/mapred-env.sh
+
+	sed -i -e 's:YARN_LOG_DIR=.*:YARN_LOG_DIR=/var/log/$USER:' etc/hadoop/yarn-env.sh
 
 	bin/hadoop version || return 1
 
@@ -110,5 +119,6 @@ EOF
 
 function hadoop_destroy
 {
+	rm -rf /var/log/$hadoop_user
 	sed -i '/HADOOP_/d' $profile
 }
