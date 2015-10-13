@@ -250,9 +250,6 @@ done
 
 mkdir -p $mdh_root || exit 1
 
-cp $top/destroy-one $mdh_root/destroy
-chmod a+x $mdh_root/destroy
-
 # do deploy
 echo "MDH will be installed to '$mdh_root'"
 echo
@@ -340,6 +337,9 @@ hadoop_user=$hadoop_user
 app_rev="$app_rev"
 profile=$profile
 EOF
+
+cp $top/destroy-one $mdh_root/destroy
+chmod a+x $mdh_root/destroy
 
 echo "MDH deployed successfully!"
 echo

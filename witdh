@@ -1,18 +1,24 @@
 #!/bin/sh
 
-opcode=deploy
-while [ $# -gt 0 ]
-do
-	case $1 in
-	-d|--destroy)
-		opcode=destroy
-		;;
-	*)
-		echo "option '$1' not supported!"
-		exit 1
-	esac
-	shift
-done
+cmd=$1
+
+case "$cmd" in 
+deploy|destroy|start|stop|status)
+	;;
+*)
+	echo "Usage: `basename $0` {destroy|start|stop}"
+	exit 1
+esac
+
+#while [ $# -gt 0 ]
+#do
+#	case $1 in
+#	*)
+#		echo "option '$1' not supported!"
+#		exit 1
+#	esac
+#	shift
+#done
 
 if [ -e ./.config ]; then
 	. ./.config
@@ -53,7 +59,38 @@ do
 	echo "[$i] $host"
 done
 
-if [ $opcode = 'deploy' ]; then
+# FIXME: to be removed
+. configs/config-hadoop-2.7
+
+conf_url[hive]=$hadoop_repo/apache-hive-${conf_version[hive]}-bin.tar.gz
+conf_url[hadoop]=$hadoop_repo/hadoop-${conf_version[hadoop]}.tar.gz
+conf_url[hbase]=$hadoop_repo/hbase-${conf_version[hbase]}-bin.tar.gz
+conf_url[spark]=$hadoop_repo/spark-${conf_version[spark]}-bin-hadoop2.6.tgz
+conf_url[zookeeper]=$hadoop_repo/zookeeper-${conf_version[zookeeper]}.tar.gz
+conf_url[pig]=$hadoop_repo/pig-${conf_version[pig]}.tar.gz
+
+# FIX the url
+conf_url[java]=/mnt/witpub/devel/java/jdk/jdk-${conf_version[java]}-linux-x64.tar.gz
+conf_url[scala]=/mnt/witpub/devel/scala/scala-${conf_version[scala]}.tgz
+
+app_seq=""
+app_rev=""
+
+for app in hadoop zookeeper hbase spark
+do
+	if [ -n "${conf_version[$app]}" ]; then
+		app_seq="$app_seq $app"
+		app_rev="$app $app_rev"
+	fi
+done
+
+ssh_opt='-o StrictHostKeyChecking=no'
+alias ssh="ssh $ssh_opt"
+alias scp="scp $ssh_opt -q"
+alias ssh-copy-id="ssh-copy-id $ssh_opt"
+
+case $cmd in
+deploy)
 	if [ ! -e ~/.ssh/id_rsa.pub ]; then
 		mkdir -p -m 700 ~/.ssh
 		ssh-keygen -P '' -f ~/.ssh/id_rsa
@@ -61,7 +98,7 @@ if [ $opcode = 'deploy' ]; then
 
 	for host in ${hosts[@]}
 	do
-		ssh-copy-id -o StrictHostKeyChecking=no $host || exit 1
+		ssh-copy-id $host || exit 1
 	done
 
 	if [ $mode = 'cluster' ]; then
@@ -79,11 +116,11 @@ if [ $opcode = 'deploy' ]; then
 		echo "[$((i+1))/$total] $host"
 		dest=`ssh $user@$host mktemp -d`
 		ssh $user@$host chmod a+rx $dest
-		scp -q -r $PWD $user@$host:$dest
+		scp -r $PWD $user@$host:$dest
 		if [ $mode = 'cluster' ]; then
-			scp -q $temp/id_rsa.pub $user@$host:$dest
+			scp $temp/id_rsa.pub $user@$host:$dest
 			if [ $host = $master ]; then
-				scp -q $temp/id_rsa $user@$host:$dest
+				scp $temp/id_rsa $user@$host:$dest
 			fi
 			options="--id $i --key $dest/id_rsa.pub --master $master --slaves $config_slaves"
 		fi
@@ -95,12 +132,21 @@ if [ $opcode = 'deploy' ]; then
 	if [ $mode = 'cluster' ]; then
 		rm -rf $temp
 	fi
+	;;
 
-	hbase_installed=`echo $app_seq | grep hbase`
+destroy)
+	for host in ${hosts[@]}	
+	do
+		# FIXME
+		ssh $user@$host sudo /opt/mdh/destroy || exit 1
+	done
+	;;
+
+start)
 	for app in $app_seq
 	do
 		echo "staring $app ..."
-		if [ $app = zookeeper -a -n "$hbase_installed" ]; then
+		if [ $app = zookeeper -a -n "${conf_version[hbase]}" ]; then
 			echo "(skipped)"
 		else
 			ssh $user@$master sudo service $app start || exit 1
@@ -110,28 +156,31 @@ if [ $opcode = 'deploy' ]; then
 		fi
 		echo
 	done
-else
-	app_rev=""
-	for app in $app_seq
-	do
-		app_rev="$app $app_rev"
-	done
+	;;
 
-	hbase_installed=`echo $app_seq | grep hbase`
+stop)
 	for app in $app_rev
 	do
 		echo "stopping $app ..."
-		if [ $app = zookeeper -a -n "$hbase_installed" ]; then
+		if [ $app = zookeeper -a -n "${conf_version[hbase]}" ]; then
 			echo "(skipped)"
 		else
 			ssh $user@$master sudo service $app stop || exit 1
 		fi
 		echo
 	done
+	;;
 
-	for host in ${hosts[@]}	
-	do
-		# FIXME
-		ssh $user@$host sudo /opt/mdh/destroy || exit 1
-	done
-fi
+status)
+	echo "not implemented :)"
+	exit 0
+	;;
+
+*)
+	echo "Bug!"
+	exit 1
+	;;
+esac
+
+echo "All done!"
+echo

@@ -8,19 +8,19 @@ fi
 
 case $1 in
 start)
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-dfs.sh || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-yarn.sh || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || return 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-dfs.sh || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-yarn.sh || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver || exit 1
 	;;
 stop)
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/stop-dfs.sh || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/sbin/stop-yarn.sh || return 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh stop historyserver || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/stop-dfs.sh || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/sbin/stop-yarn.sh || exit 1
 	;;
 init)
-	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -mkdir -p /tmp /user || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp /user || return 1
-	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -ls / || return 1
+	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -mkdir -p /tmp /user || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -chmod g+w /tmp /user || exit 1
+	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -ls / || exit 1
 	;;
 *)
 	echo "Usage: service `basename $0` {start|stop|init}"
