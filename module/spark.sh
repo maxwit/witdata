@@ -2,6 +2,7 @@ function spark_deploy
 {
 	cp conf/spark-env.sh{.template,}
 	echo >> conf/spark-env.sh
+	echo 'export SPARK_LOG_DIR=/var/log/$USER/spark' >> conf/spark-env.sh
 	echo "export JAVA_HOME=${home_dict[java]}" >> conf/spark-env.sh
 	echo "export SPARK_MASTER_IP=$master" >> conf/spark-env.sh
 

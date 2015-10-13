@@ -329,10 +329,12 @@ rm `find $mdh_root -name "*.cmd"`
 if [ $mode != 'cluster' ]; then
 	for app in $app_seq
 	do
+		echo "staring $app ..."
 		service $app start || exit 1
 		if [ $app = 'hadoop' ]; then
 			service $app init || exit 1
 		fi
+		echo
 	done
 fi
 
