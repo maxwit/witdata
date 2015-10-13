@@ -1,6 +1,12 @@
-cmd=$1
+#!/bin/sh
 
-case $cmd in
+. /etc/mdh.conf
+
+if [ -z "$HADOOP_HOME" ]; then
+	HADOOP_HOME=$mdh_root/hadoop
+fi
+
+case $1 in
 start)
 	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-dfs.sh || return 1
 	sudo -u $hadoop_user $HADOOP_HOME/sbin/start-yarn.sh || return 1
@@ -17,7 +23,7 @@ init)
 	sudo -u $hadoop_user $HADOOP_HOME/bin/hadoop fs -ls / || return 1
 	;;
 *)
-	echo "invalid cmd '$1'"
+	echo "Usage: service `basename $0` {start|stop|init}"
 	exit 1
 	;;
 esac

@@ -1,3 +1,17 @@
-cmd=$1
+#!/bin/sh
 
-sudo -u $hadoop_user $SPARK_HOME/sbin/$cmd-all.sh
+. /etc/mdh.conf
+
+if [ -z "$SPARK_HOME" ]; then
+	SPARK_HOME=$mdh_root/spark
+fi
+
+case $1 in
+start|stop)
+	sudo -u $hadoop_user $SPARK_HOME/sbin/$1-all.sh
+	;;
+*)
+	echo "Usage: service `basename $0` {start|stop}"
+	exit 1
+	;;
+esac

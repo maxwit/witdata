@@ -152,18 +152,26 @@ done
 #hadoop_repo="repo.maxwit.com:/mnt/witpub/cloud/apache"
 hadoop_repo="/mnt/witpub/cloud/apache"
 
-hadoop_user=hadoop
+hadoop_user="hadoop"
 hadoop_user_home="/var/lib/$hadoop_user"
-data_root="$hadoop_user_home/data"
+# FIXME
+zk_data_dir="$hadoop_user_home/zookeeper"
 
 util_root="/opt/util"
 mdh_root="/opt/mdh"
 
-echo "###########################################"
-echo "                 MDH v$version"
-echo "    MaxWit Distribution of Apache Hadoop"
-echo "###########################################"
 echo
+echo "#############################################"
+echo "              MDH v$version"
+echo "    MaxWit Distribution of Apache Hadoop"
+echo "#############################################"
+echo
+
+test -e /etc/mdh.conf && \
+{
+	echo "MDH already installed!"
+	exit 1
+}
 
 if [ "${#slaves[@]}" -gt 0 ]; then
 	if [ -z "$master" ]; then
@@ -243,7 +251,6 @@ done
 cat > /etc/mdh.conf << EOF
 mdh_root=$mdh_root
 util_root=$util_root
-data_root=$data_root
 hadoop_user=$hadoop_user
 app_rev="$app_rev"
 profile=$profile
@@ -258,14 +265,12 @@ chmod a+x $mdh_root/destroy
 echo "MDH will be installed to '$mdh_root'"
 echo
 
-grep "^$hadoop_user:" /etc/passwd && \
-{
-	echo "user '$hadoop_user' already exists!"
-	exit 1
-}
-
-echo "create user '$hadoop_user' ..."
-useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
+if grep "^$hadoop_user:" /etc/passwd > /dev/null; then
+	echo "Warning: user '$hadoop_user' already exists!"
+else
+	echo "create user '$hadoop_user' ..."
+	useradd -m -d $hadoop_user_home -s /bin/bash -c "Hadoop" $hadoop_user
+fi
 
 sudo -i -u $hadoop_user mkdir -m 700 .ssh
 if [ ${hosts[$this]} == $master ]; then
@@ -287,8 +292,6 @@ fi
 #sudo -i -u $hadoop_user chmod 600 .ssh/*
 echo
 
-sudo -u $hadoop_user mkdir -p $data_root || exit 1
-
 mkdir -p $util_root || exit 1
 
 for util in $util_list
@@ -309,37 +312,29 @@ done
 for app in $app_seq
 do
 	if ! download_and_extract $app; then
-		rm -rf $util_root
-		rm -f $profile
-		userdel -r $hadoop_user
 		exit 1
 	fi
-	cd ${home_dict[$app]} || exit 1
+
+	cd ${home_dict[$app]} && \
 	execute ${app}_deploy || exit 1
 
-	service=/etc/init.d/$app
-	home=`echo $app | tr a-z A-Z`_HOME
-	cat > $service << EOF
-#!/bin/sh
-#
-#
-
-if [ \$# -ne 1 ]; then
-	echo "usage: xxx"
-	exit 1
-fi
-
-hadoop_user=$hadoop_user
-$home=${home_dict[$app]}
-
-EOF
-	cat $top/service/$app >> $service
-	chmod +x $service
+	cp $top/service/$app /etc/init.d/ || exit 1
+	chmod +x /etc/init.d/$app
 
 	echo
 done
 
 rm `find $mdh_root -name "*.cmd"`
+
+if [ $mode != 'cluster' ]; then
+	for app in $app_seq
+	do
+		service $app start || exit 1
+		if [ $app = 'hadoop' ]; then
+			service $app init || exit 1
+		fi
+	done
+fi
 
 echo "MDH deployed successfully!"
 echo

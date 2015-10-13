@@ -23,7 +23,7 @@ function hadoop_deploy
 	</property>
 	<property>
 		<name>hadoop.tmp.dir</name>
-		<value>$data_root/tmp</value>
+		<value>$hadoop_user_home/tmp</value>
 	</property>
 EOF
 

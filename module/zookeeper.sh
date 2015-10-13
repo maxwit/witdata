@@ -1,11 +1,9 @@
 function zookeeper_deploy
 {
-	local data_dir=$data_root/zookeeper
-
-	mkdir -p $data_dir || return 1
+	sudo -u $hadoop_user mkdir -p $zk_data_dir || exit 1
 
 	cp conf/zoo{_sample,}.cfg || return 1
-	sed -i "s:^dataDir=.*:dataDir=$data_dir:" conf/zoo.cfg
+	sed -i "s:^dataDir=.*:dataDir=$zk_data_dir:" conf/zoo.cfg
 
 	if [ $mode = "cluster" ]; then
 		local count=1
@@ -16,7 +14,7 @@ function zookeeper_deploy
 			((count++))
 		done
 
-		echo $((this+1))> $data_dir/myid
+		echo $((this+1))> $zk_data_dir/myid
 	fi
 
 	sed '/^#/d' conf/zoo.cfg 

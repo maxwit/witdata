@@ -9,6 +9,7 @@ function hadoop_destroy
 function zookeeper_destroy
 {
 	sed -i '/ZOOKEEPER_HOME/d' $profile
+	sudo -u $hadoop_user rm -rf $zk_data_dir
 }
 
 function hbase_destroy
@@ -30,15 +31,11 @@ echo "Removing MDH ..."
 
 . /etc/mdh.conf
 
-rm -f /etc/mdh.conf
-
-sudo -u $hadoop_user rm -rf $data_root
-userdel -r $hadoop_user || exit 1
-
 for app in $app_rev
 do
 	if [ -e /etc/init.d/$app ]; then
 		echo "removing $app ..."
+		service $app stop || exit 1
 		rm -f /etc/init.d/$app
 		${app}_destroy
 		rm -rf $"$app"_home
@@ -50,6 +47,11 @@ rm -rf $util_root || exit 1
 rm -f $profile # FIXME
 
 rm -rf $mdh_root || exit 1
+
+
+userdel -r $hadoop_user || exit 1
+
+rm -f /etc/mdh.conf
 
 echo "MDH removed successfully!"
 echo

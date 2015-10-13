@@ -1,3 +1,18 @@
-cmd=$1
+#!/bin/sh
 
-sudo -u $hadoop_user $SPARK_HOME/bin/zkServer.sh $cmd
+. /etc/mdh.conf
+
+if [ -z "$ZOOKEEPER_HOME" ]; then
+	ZOOKEEPER_HOME=$mdh_root/zookeeper
+fi
+
+case $1 in
+start|stop)
+	# FIXME
+	sudo -i -u $hadoop_user $ZOOKEEPER_HOME/bin/zkServer.sh $1
+	;;
+*)
+	echo "Usage: service `basename $0` {start|stop}"
+	exit 1
+	;;
+esac

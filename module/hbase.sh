@@ -15,7 +15,7 @@ function hbase_deploy
   </property>
   <property>
     <name>hbase.zookeeper.property.dataDir</name>
-    <value>$data_root/zookeeper</value>
+    <value>$zk_data_dir</value>
   </property>
 EOF
 
