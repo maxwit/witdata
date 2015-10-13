@@ -58,6 +58,7 @@ do
 	((i++))
 	echo "[$i] $host"
 done
+echo
 
 # FIXME: to be removed
 . configs/config-hadoop-2.7
@@ -135,8 +136,11 @@ deploy)
 	;;
 
 destroy)
-	for host in ${hosts[@]}	
+	total=${#hosts[@]}
+	for ((i=0; i<$total;i++))
 	do
+		host=${hosts[$i]}
+		echo "[$((i+1))/$total] $host"
 		# FIXME
 		ssh $user@$host sudo /opt/mdh/destroy || exit 1
 	done
